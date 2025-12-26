@@ -58,7 +58,7 @@ export default function SpendingByCategory() {
                             ))}
                         </Pie>
                         <Tooltip
-                            formatter={(value: number) => [`GH₵${value.toFixed(2)}`, 'Total']}
+                            formatter={(value) => [`GH₵${Number(value).toFixed(2)}`, 'Total']}
                             contentStyle={{ backgroundColor: '#171717', border: '1px solid #262626', borderRadius: '6px', color: '#fff', fontSize: '12px' }}
                         />
                     </PieChart>

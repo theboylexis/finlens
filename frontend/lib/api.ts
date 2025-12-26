@@ -12,7 +12,7 @@ export interface Category {
 export interface CategorySuggestion {
   category: string;
   confidence: number;
-  method: string;
+  method: 'regex' | 'ai' | 'manual';
 }
 
 export interface ExpenseCreate {

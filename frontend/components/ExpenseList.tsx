@@ -96,8 +96,8 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
                                     <span className="text-sm font-medium text-white truncate">{expense.description}</span>
                                     <CategoryBadge
                                         category={expense.category}
-                                        confidence={expense.confidence_score}
-                                        method={expense.categorization_method}
+                                        confidence={expense.confidence_score ?? undefined}
+                                        method={expense.categorization_method as 'regex' | 'ai' | 'manual'}
                                         showConfidence={expense.categorization_method !== 'manual'}
                                         size="sm"
                                     />

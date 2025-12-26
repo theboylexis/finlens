@@ -59,7 +59,7 @@ export default function SpendingTrends() {
                     <XAxis dataKey="date" stroke="#404040" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#404040" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₵${v}`} />
                     <Tooltip
-                        formatter={(value: number) => [`GH₵${value.toFixed(2)}`, 'Spent']}
+                        formatter={(value) => [`GH₵${Number(value).toFixed(2)}`, 'Spent']}
                         contentStyle={{ backgroundColor: '#171717', border: '1px solid #262626', borderRadius: '6px', color: '#fff', fontSize: '12px' }}
                     />
                     <Area type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={2} fill="url(#areaGradient)" />
