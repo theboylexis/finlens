@@ -13,18 +13,18 @@ export default function AppLayout({ children, title, actions }: AppLayoutProps) 
         <div className="min-h-screen bg-[#0f0f0f]">
             <Sidebar />
 
-            {/* Main Content */}
-            <main className="ml-60 min-h-screen">
+            {/* Main Content - add top padding on mobile for header, left margin on desktop for sidebar */}
+            <main className="min-h-screen pt-14 lg:pt-0 lg:ml-60">
                 {/* Page Header */}
                 {title && (
-                    <header className="h-14 border-b border-[#262626] bg-[#0f0f0f] sticky top-0 z-40 flex items-center justify-between px-6">
+                    <header className="h-14 border-b border-[#262626] bg-[#0f0f0f] sticky top-14 lg:top-0 z-30 flex items-center justify-between px-4 lg:px-6">
                         <h1 className="text-base font-semibold text-white">{title}</h1>
                         {actions && <div className="flex items-center gap-2">{actions}</div>}
                     </header>
                 )}
 
                 {/* Page Content */}
-                <div className="p-6">
+                <div className="p-4 lg:p-6">
                     {children}
                 </div>
             </main>
