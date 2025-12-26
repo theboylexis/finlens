@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FinLens AI - Personal Finance Assistant",
   description: "AI-Powered Personal Finance Assistant with smart categorization and insights",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default function RootLayout({
