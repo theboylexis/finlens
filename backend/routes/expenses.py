@@ -19,7 +19,7 @@ from models import (
 )
 from services.categorizer import get_categorizer
 from services.alerts import check_and_create_budget_alerts
-from routes.auth import get_current_user
+from dependencies import get_current_user
 from calendar import monthrange
 
 router = APIRouter()

@@ -16,7 +16,7 @@ from models import (
     AnalyticsSummary,
     BudgetStatus,
 )
-from routes.auth import get_current_user
+from dependencies import get_current_user
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)

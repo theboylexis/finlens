@@ -9,7 +9,7 @@ import aiosqlite
 
 from database import get_db
 from models import GoalCreate, GoalUpdate, GoalResponse, ContributionCreate, ContributionResponse
-from routes.auth import get_current_user
+from dependencies import get_current_user
 
 router = APIRouter()
 
