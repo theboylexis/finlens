@@ -49,7 +49,17 @@ app = FastAPI(
 )
 
 # CORS configuration
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+# CORS configuration
+# Parse origins and strip whitespace
+raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+origins = [origin.strip() for origin in raw_origins.split(",")]
+
+# Explicitly add production domains (fallback)
+origins.extend([
+    "https://finlens-chi.vercel.app",
+    "https://finlens-chi.vercel.app/"
+])
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
