@@ -1,0 +1,6 @@
+# Force Railway to use Dockerfile instead of Nixpacks
+[phases.build]
+cmds = []
+
+[start]
+cmd = ""
