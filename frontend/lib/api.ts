@@ -1,5 +1,8 @@
 // API Configuration
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const ENV_API_URL = process.env.NEXT_PUBLIC_API_URL;
+export const API_URL = ENV_API_URL
+  ? ENV_API_URL.replace(/\/$/, '') // Remove trailing slash if present
+  : 'http://localhost:8000';
 
 // Type Definitions
 export interface Category {
@@ -38,7 +41,10 @@ export function getAuthHeaders(): HeadersInit {
 }
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_URL}${endpoint}`;
+  // Ensure endpoint starts with /
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${path}`;
+
   const headers = {
     ...getAuthHeaders(),
     ...options.headers,
