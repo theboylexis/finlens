@@ -10,7 +10,11 @@ import jwt
 import aiosqlite
 
 # Configuration - In production, use environment variables!
-SECRET_KEY = "finlens-secret-key-change-in-production-" + secrets.token_hex(16)
+import os
+
+# Configuration - In production, use environment variables!
+# Use persistent key from env, or fallback to random (logs everyone out on restart)
+SECRET_KEY = os.getenv("JWT_SECRET", "finlens-secret-key-change-in-production-" + secrets.token_hex(16))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
