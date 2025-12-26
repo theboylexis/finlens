@@ -39,7 +39,7 @@ async def test_db() -> AsyncGenerator[aiosqlite.Connection, None]:
     original_db_path = db.db_path
     db.db_path = ":memory:"
     
-    await db.connect()
+    await init_db()
     
     yield db.connection
     

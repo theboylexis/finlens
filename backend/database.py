@@ -232,6 +232,11 @@ class Database:
         if self._connection:
             await self._connection.close()
             print("✓ Database connection closed")
+
+    @property
+    def connection(self):
+        """Expose active connection (used in tests)."""
+        return self._connection
     
     @asynccontextmanager
     async def get_connection(self):
@@ -249,3 +254,10 @@ async def get_db():
     """Dependency for FastAPI routes."""
     async with db.get_connection() as connection:
         yield connection
+
+
+# Test helper to initialize the DB explicitly
+async def init_db():
+    """Initialize and return a connected database (for tests)."""
+    await db.connect()
+    return db.connection
