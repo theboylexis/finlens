@@ -16,8 +16,8 @@ COPY backend/ .
 
 # Make port available to the world outside this container
 # (Note: Railway ignores EXPOSE but it's good practice)
-EXPOSE 8000
+EXPOSE 8080
 
 # Run main.py when the container launches
 # Use $PORT environment variable provided by Railway
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
