@@ -1,8 +1,12 @@
 // API Configuration
 const ENV_API_URL = process.env.NEXT_PUBLIC_API_URL;
+console.log('DEBUG: NEXT_PUBLIC_API_URL=', ENV_API_URL);
+
 export const API_URL = ENV_API_URL
-  ? ENV_API_URL.replace(/\/$/, '') // Remove trailing slash if present
+  ? ENV_API_URL.replace(/\/$/, '')
   : 'http://localhost:8000';
+
+console.log('DEBUG: Final API_URL=', API_URL);
 
 // Type Definitions
 export interface Category {
