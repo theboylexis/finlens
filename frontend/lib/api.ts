@@ -2,11 +2,17 @@
 const ENV_API_URL = process.env.NEXT_PUBLIC_API_URL;
 console.log('DEBUG: NEXT_PUBLIC_API_URL=', ENV_API_URL);
 
-export const API_URL = ENV_API_URL
-  ? ENV_API_URL.replace(/\/$/, '')
-  : 'http://localhost:8000';
+let apiUrl = ENV_API_URL || 'http://localhost:8000';
+// Ensure protocol is present
+if (!apiUrl.startsWith('http')) {
+  apiUrl = `https://${apiUrl}`;
+}
+// Remove trailing slash
+apiUrl = apiUrl.replace(/\/$/, '');
 
-console.log('DEBUG: Final API_URL=', API_URL);
+export const API_URL = apiUrl;
+
+console.log('DEBUG: Final computed API_URL=', API_URL);
 
 // Type Definitions
 export interface Category {
