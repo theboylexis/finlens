@@ -73,7 +73,7 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function suggestCategory(description: string): Promise<CategorySuggestion> {
-  const response = await apiFetch(`/api/expenses/suggest?description=${encodeURIComponent(description)}`);
+  const response = await apiFetch(`/api/expenses/suggest-category?description=${encodeURIComponent(description)}`);
   if (!response.ok) {
     throw new Error('Failed to suggest category');
   }
