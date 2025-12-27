@@ -110,7 +110,7 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-emerald-400">{formatCurrency(expense.amount)}</span>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => setSplitExpense(expense)}
                                     className="p-1 text-[#52525b] hover:text-cyan-400 transition-colors"
