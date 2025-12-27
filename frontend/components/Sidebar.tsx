@@ -58,7 +58,7 @@ export default function Sidebar() {
                 fixed left-0 w-60 bg-[#0f0f0f] border-r border-[#262626] flex flex-col z-50
                 transition-transform duration-300 ease-in-out
                 lg:top-0 lg:h-screen lg:translate-x-0
-                top-14 h-[calc(100vh-3.5rem)] ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+                top-14 bottom-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Logo - Hidden on mobile since header shows it */}
                 <div className="h-14 hidden lg:flex items-center px-4 border-b border-[#262626]">
@@ -69,7 +69,7 @@ export default function Sidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 py-4 px-3">
+                <nav className="flex-1 py-4 px-3 overflow-y-auto">
                     <ul className="space-y-1">
                         {navigation.map((item) => {
                             const isActive = pathname === item.href;
@@ -93,12 +93,12 @@ export default function Sidebar() {
                     </ul>
                 </nav>
 
-                {/* User Section */}
-                {user && (
-                    <div className="p-3 border-t border-[#262626]">
+                {/* User Section - Always show at bottom */}
+                <div className="p-3 border-t border-[#262626] mt-auto">
+                    {user ? (
                         <div className="flex items-center gap-3 px-2 py-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black text-sm font-bold">
-                                {user.name?.charAt(0).toUpperCase()}
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black text-sm font-bold shrink-0">
+                                {user.name?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-white truncate">{user.name}</p>
@@ -106,14 +106,22 @@ export default function Sidebar() {
                             </div>
                             <button
                                 onClick={() => { logout(); closeMobileMenu(); }}
-                                className="p-1.5 text-[#52525b] hover:text-red-400 transition-colors rounded"
+                                className="p-1.5 text-[#52525b] hover:text-red-400 transition-colors rounded shrink-0"
                                 title="Sign out"
                             >
                                 <LogOut className="w-4 h-4" />
                             </button>
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <Link 
+                            href="/login" 
+                            onClick={closeMobileMenu}
+                            className="block text-center py-2 text-sm text-emerald-400 hover:text-emerald-300"
+                        >
+                            Sign in
+                        </Link>
+                    )}
+                </div>
             </aside>
         </>
     );
