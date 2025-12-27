@@ -55,13 +55,13 @@ export default function Sidebar() {
 
             {/* Sidebar - Desktop: always visible, Mobile: slide in */}
             <aside className={`
-                fixed left-0 top-0 h-screen w-60 bg-[#0f0f0f] border-r border-[#262626] flex flex-col z-50
+                fixed left-0 w-60 bg-[#0f0f0f] border-r border-[#262626] flex flex-col z-50
                 transition-transform duration-300 ease-in-out
-                lg:translate-x-0
-                ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:top-0 lg:h-screen lg:translate-x-0
+                top-14 h-[calc(100vh-3.5rem)] ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
-                {/* Logo */}
-                <div className="h-14 flex items-center px-4 border-b border-[#262626]">
+                {/* Logo - Hidden on mobile since header shows it */}
+                <div className="h-14 hidden lg:flex items-center px-4 border-b border-[#262626]">
                     <Link href="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
                         <Wallet className="w-5 h-5 text-emerald-400" />
                         <span className="text-base font-semibold text-white">FinLens</span>
