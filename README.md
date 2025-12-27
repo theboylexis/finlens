@@ -1,18 +1,25 @@
-# FinLens AI
+# FinLens AI 💰
 
-**AI-Powered Personal Finance Assistant** - Portfolio Project
+**Smart Personal Finance Assistant**
 
-A production-grade personal finance application demonstrating AI orchestration, data pipeline design, and engineering best practices.
+A full-stack personal finance application featuring intelligent expense categorization, natural language queries, budget tracking, and financial goal management.
 
-## 🎯 Project Overview
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
 
-FinLens AI is not just another CRUD app. It's an engineer-grade portfolio project showcasing:
+## 🎯 Overview
 
-- **Hybrid AI Systems**: Regex + LLM categorization (not blind AI trust)
-- **SQL-First Architecture**: Pre-defined templates prevent AI-generated SQL
-- **Transparent AI**: Every decision includes confidence scores and explanations
-- **Comprehensive Audit Logging**: Full traceability of AI operations
-- **Production Thinking**: Clear trade-offs between demo and production requirements
+FinLens AI helps users take control of their finances with:
+
+- **Hybrid Categorization System** — Regex + LLM for accurate expense classification
+- **SQL-First Architecture** — Pre-defined query templates for security and reliability
+- **Transparent Decisions** — Confidence scores and explanations for every categorization
+- **Comprehensive Logging** — Full audit trail of all operations
 
 ## 🏗️ Architecture
 
@@ -29,62 +36,63 @@ FinLens AI is not just another CRUD app. It's an engineer-grade portfolio projec
                      └──────────────┘
 ```
 
-### Data Flow: Expense Categorization
+### Expense Categorization Flow
 
-1. **User Input** → Expense description
-2. **Regex Categorization** → Fast, deterministic (95% confidence)
-3. **AI Fallback** → Gemini Pro (if regex fails)
-4. **Confidence Scoring** → High/Medium/Low indicators
-5. **User Override** → Manual confirmation option
-6. **Audit Logging** → Full traceability
+1. **User Input** → Expense description entered
+2. **Regex Engine** → Fast, deterministic pattern matching (95% confidence)
+3. **AI Fallback** → Gemini handles edge cases when regex fails
+4. **Confidence Scoring** → Visual High/Medium/Low indicators
+5. **User Override** → Manual confirmation option available
+6. **Audit Trail** → Full traceability maintained
 
 ## 🚀 Tech Stack
 
 ### Frontend
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **TailwindCSS**
-- **Recharts** (for visualizations)
+
+| Technology                                                                                                       | Purpose                       |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| ![Next.js](https://img.shields.io/badge/Next.js_14-000?style=flat-square&logo=nextdotjs)                         | App Router, Server Components |
+| ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)  | Type Safety                   |
+| ![TailwindCSS](https://img.shields.io/badge/Tailwind-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white) | Styling                       |
+| ![Recharts](https://img.shields.io/badge/Recharts-FF6384?style=flat-square)                                      | Data Visualization            |
 
 ### Backend
-- **FastAPI** (Python)
-- **SQLite** (async via aiosqlite)
-- **Pydantic** (validation)
-- **Google Gemini AI**
 
-### Why These Choices?
-
-- **SQLite over PostgreSQL**: Zero setup, easy demos, Postgres-ready schema
-- **FastAPI over Express**: Native async, Pydantic validation, better AI integration
-- **Fixed Categories**: Consistent AI training, simpler budget tracking
-- **No Bank Integration**: Avoids security complexity in portfolio context
+| Technology                                                                                                | Purpose                    |
+| --------------------------------------------------------------------------------------------------------- | -------------------------- |
+| ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)    | REST API Framework         |
+| ![Python](https://img.shields.io/badge/Python_3.10+-3776AB?style=flat-square&logo=python&logoColor=white) | Backend Language           |
+| ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)       | Database                   |
+| ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=flat-square)                               | Data Validation            |
+| ![Gemini](https://img.shields.io/badge/Gemini_AI-8E75B2?style=flat-square&logo=google&logoColor=white)    | Intelligent Categorization |
 
 ## 📦 Project Structure
 
 ```
-ai-finance-assistant/
+finlens/
 ├── frontend/                 # Next.js application
 │   ├── app/                 # App router pages
 │   ├── components/          # React components
-│   └── lib/                 # Utilities
+│   └── lib/                 # Utilities & API client
 │
 ├── backend/                 # FastAPI application
-│   ├── main.py             # App entry point
-│   ├── database.py         # SQLite schema & connection
+│   ├── main.py             # Application entry point
+│   ├── database.py         # Database schema & connection
 │   ├── models.py           # Pydantic schemas
-│   ├── services/           # AI services
-│   │   ├── categorizer.py  # Hybrid categorization
-│   │   ├── query_engine.py # NL query processor
-│   │   └── insight_engine.py # AI insights
+│   ├── services/           # Business logic
+│   │   ├── categorizer.py  # Hybrid categorization engine
+│   │   ├── query_engine.py # Natural language processor
+│   │   └── gemini_client.py # AI integration
 │   └── routes/             # API endpoints
 │
-└── README.md               # This file
+└── README.md
 ```
 
-## 🛠️ Setup & Installation
+## 🛠️ Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
+
+- Node.js 18+
 - Python 3.10+
 - Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
 
@@ -96,186 +104,110 @@ npm install
 npm run dev
 ```
 
-Frontend runs on: http://localhost:3000
+→ Runs on http://localhost:3000
 
 ### Backend Setup
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
 
-# Activate (Windows)
+# Windows
 venv\Scripts\activate
-# Activate (Unix/MacOS)
+# macOS/Linux
 source venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
+# Configure environment
 cp .env.example .env
-# Add your GEMINI_API_KEY to .env
+# Add your GEMINI_API_KEY
 
-# Run server
 python main.py
 ```
 
-Backend runs on: http://localhost:8000
-API Docs: http://localhost:8000/docs
+→ Runs on http://localhost:8000  
+→ API Docs: http://localhost:8000/docs
 
-## 🎨 Key Features
+## ✨ Features
 
-### 1. Hybrid AI Categorization
-- **Regex First**: Fast, deterministic pattern matching
-- **AI Fallback**: Gemini Pro for complex cases
-- **Confidence Scores**: Visual indicators (High/Medium/Low)
-- **User Override**: Manual confirmation with audit trail
+### 🏷️ Smart Categorization
 
-### 2. Natural Language Queries
-- Pre-defined SQL templates (security-first)
-- Intent classification via AI
-- Transparent explanations
-- Data source citations
+- Regex-first approach for speed and accuracy
+- AI fallback for complex edge cases
+- Confidence indicators (High/Medium/Low)
+- User override with audit trail
 
-### 3. Budget Intelligence
-- Category-based budgets
-- Burn rate visualization
-- Remaining daily allowance
-- Smart alerts
+### 💬 Natural Language Queries
 
-### 4. Transparent AI Insights
-- SQL-detected patterns
-- AI-generated explanations
-- Data source references
-- Confidence scoring
+- Ask questions about spending in plain English
+- Secure SQL template selection (no injection risk)
+- Clear explanations with data citations
 
-### 5. User-Facing Audit Log
-- "How FinLens categorized this"
-- Model used & confidence
-- Override capability
-- Full traceability
+### 📊 Budget Management
 
-## 🔒 AI Safety & Trust
+- Category-based budget allocation
+- Real-time burn rate tracking
+- Daily allowance calculations
+- Proactive spending alerts
+
+### 🎯 Financial Goals
+
+- Create and track savings goals
+- Contribution history
+- Progress visualization
+
+### 👥 Expense Splitting
+
+- Split bills with friends
+- Track balances owed
+- Settlement tracking
+
+### 📈 Analytics Dashboard
+
+- Spending trends over time
+- Category breakdowns
+- Weekly spending heatmaps
+- Visual insights
+
+## 🔒 Security
 
 ### SQL Injection Prevention
-```python
-# ❌ NEVER: AI generates SQL
-sql = gemini.generate(f"Create SQL for: {user_query}")
 
-# ✅ ALWAYS: Template selection + binding
+```python
+# Template-based queries only
 template = select_template(intent)
 params = extract_params(user_query)
-sql = template.bind(params)
+result = execute_safe_query(template, params)
 ```
 
 ### Confidence-Based Actions
-- **High (>80%)**: Auto-apply with green indicator
-- **Medium (50-80%)**: Apply with yellow flag
-- **Low (<50%)**: Require manual confirmation
 
-### Fallback Chain
-```
-User Input → Regex (deterministic)
-          ↓ (no match)
-          → Gemini AI (probabilistic)
-          ↓ (low confidence)
-          → Human Confirmation
-```
+| Confidence      | Action                  |
+| --------------- | ----------------------- |
+| High (>80%)     | Auto-apply ✅           |
+| Medium (50-80%) | Apply with flag ⚠️      |
+| Low (<50%)      | Require confirmation ❓ |
 
-## 📊 Demo Constraints
+## 🚧 Future Enhancements
 
-> **Note**: This is a portfolio demo, not a production app.
-
-**Data Constraints**:
-- Mock financial data (not real accounts)
-- Limited to 100 expenses for performance
-- Single-user mode (no authentication)
-
-**AI Constraints**:
-- Responses may be cached (cost control)
-- Rate limited to 10 queries/minute
-- Some insights pre-computed
-
-**Feature Scope**:
-- No bank account linking
-- No multi-currency support
-- Web-only (no mobile app)
-- No real-time sync
-
-## 🚧 What I'd Do Differently in Production
-
-### With a Team, I'd Add:
-
-**1. Bank Integrations**
-- Plaid/Yodlee API for auto-sync
-- Real-time balance updates
-- Multi-account support
-
-**2. Database Scaling**
-- Migrate to PostgreSQL
-- Redis for caching
-- Read replicas for analytics
-
-**3. Security Hardening**
-- JWT authentication
-- Row-level security (multi-tenancy)
-- Encryption at rest
-- Per-user rate limiting
-
-**4. Advanced Features**
-- Multi-currency support
-- Recurring expense detection
-- Bill payment reminders
-- CSV/PDF export
-
-**5. Production AI**
-- Fine-tuned models
-- A/B testing for accuracy
-- User feedback loops
-- Multi-provider fallbacks
-
-**6. Observability**
-- Structured logging
-- APM monitoring
-- Error tracking (Sentry)
-- AI cost dashboards
-
-**7. DevOps**
-- CI/CD pipeline
-- Automated testing
-- Staging environment
-- Database migrations
-
-## 🎯 Portfolio Success Metrics
-
-This project succeeds if a hiring manager can quickly identify:
-
-✅ **Clear data flow** - Architecture diagrams  
-✅ **AI safety controls** - Documented security model  
-✅ **SQL-first logic** - No AI-generated queries  
-✅ **Explainable outputs** - Every decision has "why"  
-✅ **Realistic constraints** - Production trade-offs  
-✅ **Clean documentation** - Answers "why" not just "what"  
-
-## 🗣️ Interview Talking Points
-
-1. **Hybrid AI Approach**: Why regex + LLM beats pure AI
-2. **SQL Template Security**: Preventing injection attacks
-3. **User-Facing Confidence**: Building trust through transparency
-4. **Audit Logging**: Production-grade traceability
-5. **Portfolio vs Production**: Understanding trade-offs
+- [ ] Bank account integration (Plaid)
+- [ ] Multi-currency support
+- [ ] Recurring expense detection
+- [ ] Mobile app (React Native)
+- [ ] CSV/PDF export
+- [ ] PostgreSQL migration for scale
 
 ## 📝 License
 
-MIT License - This is a portfolio project for educational purposes.
+MIT License
 
 ## 👤 Author
 
-**Alex Marfo**  
-Building production-ready systems, one commit at a time.
+**Alex Marfo**
+
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/theboylexis)
 
 ---
 
-**Built with ❤️ to demonstrate engineering excellence**
+⭐ Star this repo if you find it useful!
