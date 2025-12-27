@@ -140,6 +140,16 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/debug/env")
+async def debug_env():
+    """Debug endpoint to check environment variables (key presence only)."""
+    return {
+        "GEMINI_API_KEY_SET": bool(os.getenv("GEMINI_API_KEY")),
+        "GEMINI_API_KEY_LENGTH": len(os.getenv("GEMINI_API_KEY", "")),
+        "JWT_SECRET_SET": bool(os.getenv("JWT_SECRET")),
+    }
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth
 
