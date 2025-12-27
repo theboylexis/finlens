@@ -74,7 +74,7 @@ async def create_expense(
                 "categorize",
                 expense.description,
                 f"{category} ({suggestion.reasoning})",
-                "gemini-2.0-flash-exp" if suggestion.method == CategorizationMethod.AI else "regex",
+                "gemini-2.5-flash" if suggestion.method == CategorizationMethod.AI else "regex",
                 confidence_score,
                 latency_ms
             )
