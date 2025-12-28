@@ -144,7 +144,7 @@ async def create_expense(
             FROM expenses 
             WHERE category = ? AND date >= ? AND date <= ? AND user_id = ?
             """,
-            (category, month_start.isoformat(), month_end.isoformat(), user_id)
+            (category, month_start, month_end, user_id)
         )
         spent_row = await spent_cursor.fetchone()
         total_spent = spent_row["total"] if spent_row else 0
@@ -409,7 +409,7 @@ async def seed_demo_data(db: aiosqlite.Connection = Depends(get_db)):
                 categorization_method, user_overridden
             ) VALUES (?, ?, ?, ?, 'demo', 0)
             """,
-            (amount, desc, category, expense_date.isoformat())
+            (amount, desc, category, expense_date)
         )
         added += 1
     
@@ -433,7 +433,7 @@ async def seed_demo_data(db: aiosqlite.Connection = Depends(get_db)):
         INSERT INTO savings_goals (name, target_amount, current_amount, target_date, icon, color)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        ("Spring Break Trip", 500.00, 175.00, (today + timedelta(days=90)).isoformat(), "🏖️", "#10b981")
+        ("Spring Break Trip", 500.00, 175.00, (today + timedelta(days=90)), "🏖️", "#10b981")
     )
     
     await db.commit()

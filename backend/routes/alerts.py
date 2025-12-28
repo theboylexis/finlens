@@ -123,7 +123,7 @@ async def get_budget_status_with_alerts(
         GROUP BY b.category, b.monthly_limit
         ORDER BY b.category
         """,
-        (month_start.isoformat(), month_end.isoformat(), user["id"], user["id"])
+        (month_start, month_end, user["id"], user["id"])
     )
     rows = await cursor.fetchall()
     
