@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "FinLens AI - Personal Finance Assistant",
   description: "AI-Powered Personal Finance Assistant with smart categorization and insights",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.ico",
     apple: "/apple-icon.svg",
   },
 };
