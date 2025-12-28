@@ -157,20 +157,3 @@ async def get_me(user: dict = Depends(require_auth)):
 async def verify_token(user: dict = Depends(require_auth)):
     """Verify that token is valid."""
     return {"valid": True, "user_id": user["id"]}
-
-
-# TEMPORARY: Delete user by email (REMOVE THIS AFTER USE!)
-@router.delete("/admin/delete-user/{email}")
-async def delete_user_by_email(
-    email: str,
-    db: aiosqlite.Connection = Depends(get_db)
-):
-    """Temporary endpoint to delete a user by email. REMOVE AFTER USE!"""
-    email = email.lower().strip()
-    
-    # Delete the user
-    await db.execute("DELETE FROM users WHERE email = ?", (email,))
-    await db.commit()
-    
-    return {"message": f"User {email} deleted successfully"}
-
