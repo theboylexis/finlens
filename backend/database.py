@@ -744,7 +744,49 @@ class Database:
                     await conn.execute("ALTER TABLE budgets ADD CONSTRAINT unique_user_category UNIQUE (user_id, category)")
                     print("✓ PostgreSQL migration complete")
             except Exception as e:
-                print(f"Warning during Postgres migration check: {e}")
+                print(f"Warning during Postgres migration check for budgets: {e}")
+
+            # Check for user_id column in alerts table
+            try:
+                columns = await conn.fetch("SELECT column_name FROM information_schema.columns WHERE table_name = 'alerts'")
+                column_names = [r['column_name'] for r in columns]
+                
+                if 'user_id' not in column_names and 'alerts' in [r[0] for r in await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")]:
+                    print("🚀 Migrating PostgreSQL: Adding user_id to alerts...")
+                    await conn.execute("ALTER TABLE alerts ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE")
+                    # Assign existing alerts to first user
+                    first_user = await conn.fetchval("SELECT id FROM users LIMIT 1")
+                    if first_user:
+                        await conn.execute("UPDATE alerts SET user_id = $1", first_user)
+                    # Add index
+                    await conn.execute("CREATE INDEX idx_alerts_user_id ON alerts(user_id)")
+                    print("✓ PostgreSQL migration complete for alerts")
+            except Exception as e:
+                print(f"Warning during Postgres migration check for alerts: {e}")
+
+            # Check for user_id column in budget_alert_tracking table
+            try:
+                columns = await conn.fetch("SELECT column_name FROM information_schema.columns WHERE table_name = 'budget_alert_tracking'")
+                column_names = [r['column_name'] for r in columns]
+                
+                if 'user_id' not in column_names and 'budget_alert_tracking' in [r[0] for r in await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")]:
+                    print("🚀 Migrating PostgreSQL: Adding user_id to budget_alert_tracking...")
+                    await conn.execute("ALTER TABLE budget_alert_tracking ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE")
+                    # Assign existing to first user
+                    first_user = await conn.fetchval("SELECT id FROM users LIMIT 1")
+                    if first_user:
+                        await conn.execute("UPDATE budget_alert_tracking SET user_id = $1", first_user)
+                    
+                    # Drop old constraint and add new one
+                    try:
+                        await conn.execute("ALTER TABLE budget_alert_tracking DROP CONSTRAINT budget_alert_tracking_category_threshold_percent_month_key")
+                    except Exception:
+                        pass # Constraint might have different name
+                    
+                    await conn.execute("ALTER TABLE budget_alert_tracking ADD CONSTRAINT unique_user_tracking UNIQUE (user_id, category, threshold_percent, month)")
+                    print("✓ PostgreSQL migration complete for budget_alert_tracking")
+            except Exception as e:
+                print(f"Warning during Postgres migration check for budget_alert_tracking: {e}")
 
             # Insert default categories if not exists
             for cat_data in CATEGORIES_DATA:
