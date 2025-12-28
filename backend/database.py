@@ -477,6 +477,19 @@ class PostgresConnectionWrapper:
             if 'ON CONFLICT' not in sql.upper():
                 sql = sql.rstrip().rstrip(';') + ' ON CONFLICT DO NOTHING'
         
+        # Convert SQLite boolean syntax to PostgreSQL
+        # Match patterns like 'column = 0' or 'column = 1' for boolean columns
+        sql = re.sub(r'\bis_completed\s*=\s*0\b', 'is_completed = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_completed\s*=\s*1\b', 'is_completed = TRUE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_active\s*=\s*0\b', 'is_active = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_active\s*=\s*1\b', 'is_active = TRUE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_read\s*=\s*0\b', 'is_read = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_read\s*=\s*1\b', 'is_read = TRUE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_dismissed\s*=\s*0\b', 'is_dismissed = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_dismissed\s*=\s*1\b', 'is_dismissed = TRUE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_settled\s*=\s*0\b', 'is_settled = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_settled\s*=\s*1\b', 'is_settled = TRUE', sql, flags=re.IGNORECASE)
+        
         return sql
     
     def _is_insert(self, sql: str) -> bool:
