@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bell, Check, X } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Alert {
     id: number;
@@ -32,7 +32,9 @@ export default function AlertsDropdown() {
 
     const fetchAlerts = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/alerts/`);
+            const response = await fetch(`${API_URL}/api/alerts/`, {
+                headers: getAuthHeaders()
+            });
             if (response.ok) setSummary(await response.json());
         } catch (error) {
             console.error('Error fetching alerts:', error);
@@ -40,17 +42,17 @@ export default function AlertsDropdown() {
     };
 
     const markRead = async (id: number) => {
-        await fetch(`${API_URL}/api/alerts/${id}/read`, { method: 'PATCH' });
+        await fetch(`${API_URL}/api/alerts/${id}/read`, { method: 'PATCH', headers: getAuthHeaders() });
         fetchAlerts();
     };
 
     const dismiss = async (id: number) => {
-        await fetch(`${API_URL}/api/alerts/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/api/alerts/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
         fetchAlerts();
     };
 
     const markAllRead = async () => {
-        await fetch(`${API_URL}/api/alerts/mark-all-read`, { method: 'POST' });
+        await fetch(`${API_URL}/api/alerts/mark-all-read`, { method: 'POST', headers: getAuthHeaders() });
         fetchAlerts();
     };
 

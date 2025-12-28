@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { UserPlus, Sparkles, X, Trash2 } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Friend {
     id: number;
@@ -45,8 +45,8 @@ export default function SplitBillsPage() {
         try {
             setLoading(true);
             const [friendsRes, balancesRes] = await Promise.all([
-                fetch(`${API_URL}/api/splits/friends`),
-                fetch(`${API_URL}/api/splits/balances`)
+                fetch(`${API_URL}/api/splits/friends`, { headers: getAuthHeaders() }),
+                fetch(`${API_URL}/api/splits/balances`, { headers: getAuthHeaders() })
             ]);
             if (friendsRes.ok) setFriends(await friendsRes.json());
             if (balancesRes.ok) setBalances(await balancesRes.json());
@@ -88,12 +88,12 @@ export default function SplitBillsPage() {
 
     const handleDeleteFriend = async (friendId: number) => {
         if (!confirm('Delete this friend?')) return;
-        await fetch(`${API_URL}/api/splits/friends/${friendId}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/api/splits/friends/${friendId}`, { method: 'DELETE', headers: getAuthHeaders() });
         fetchData();
     };
 
     const handleSettleAll = async (friendId: number) => {
-        await fetch(`${API_URL}/api/splits/friends/${friendId}/settle-all`, { method: 'PATCH' });
+        await fetch(`${API_URL}/api/splits/friends/${friendId}/settle-all`, { method: 'PATCH', headers: getAuthHeaders() });
         fetchData();
     };
 

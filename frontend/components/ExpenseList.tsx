@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import CategoryBadge from './CategoryBadge';
 import SplitExpenseModal from './SplitExpenseModal';
 import { Split, Trash2 } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Expense {
     id: number;
@@ -36,7 +36,9 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
     const loadExpenses = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/api/expenses/`);
+            const response = await fetch(`${API_URL}/api/expenses/`, {
+                headers: getAuthHeaders()
+            });
             if (!response.ok) throw new Error('Failed to load expenses');
             const data = await response.json();
             setExpenses(data);
@@ -50,7 +52,10 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
     const handleDelete = async (id: number) => {
         if (!confirm('Delete this expense?')) return;
         try {
-            const response = await fetch(`${API_URL}/api/expenses/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${API_URL}/api/expenses/${id}`, { 
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
             if (!response.ok) throw new Error('Failed to delete');
             loadExpenses();
         } catch (err) {

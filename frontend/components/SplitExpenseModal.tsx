@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Friend {
     id: number;
@@ -29,7 +29,9 @@ export default function SplitExpenseModal({ expense, onClose, onSuccess }: Split
     useEffect(() => {
         const fetchFriends = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/splits/friends`);
+                const response = await fetch(`${API_URL}/api/splits/friends`, {
+                    headers: getAuthHeaders()
+                });
                 if (response.ok) {
                     setFriends(await response.json());
                 }
@@ -56,7 +58,7 @@ export default function SplitExpenseModal({ expense, onClose, onSuccess }: Split
                 `${API_URL}/api/splits/expenses/${expense.id}/split`,
                 {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({
                         splits: [{ friend_id: selectedFriend, amount: parseFloat(splitAmount) }]
                     })

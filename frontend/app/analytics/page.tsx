@@ -9,12 +9,12 @@ import NaturalLanguageQuery from '@/components/NaturalLanguageQuery';
 import WeeklySpendingChart from '@/components/WeeklySpendingChart';
 import BudgetProgressCards from '@/components/BudgetProgressCards';
 import { Download } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 export default function AnalyticsPage() {
     const handleExportCSV = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/expenses/`);
+            const response = await fetch(`${API_URL}/api/expenses/`, { headers: getAuthHeaders() });
             if (!response.ok) throw new Error('Failed to fetch');
             const expenses = await response.json();
             const headers = ['Date', 'Description', 'Category', 'Amount', 'Payment Method'];

@@ -6,7 +6,7 @@ import GoalCard from '@/components/GoalCard';
 import AddGoalModal from '@/components/AddGoalModal';
 import ContributeModal from '@/components/ContributeModal';
 import { Plus, PartyPopper, Target, ChevronDown, ChevronRight } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Goal {
   id: number;
@@ -37,7 +37,7 @@ export default function GoalsPage() {
     try {
       setLoading(true);
       const url = `${API_URL}/api/goals/?include_completed=${showCompleted}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Failed to fetch goals');
       const data = await response.json();
       setGoals(data);
@@ -61,7 +61,7 @@ export default function GoalsPage() {
     try {
       const response = await fetch(`${API_URL}/api/goals/${goalId}/contribute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ amount, note: note || null }),
       });
 
@@ -84,7 +84,7 @@ export default function GoalsPage() {
   const handleDeleteGoal = async (goalId: number) => {
     if (!confirm('Delete this goal?')) return;
     try {
-      const response = await fetch(`${API_URL}/api/goals/${goalId}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/api/goals/${goalId}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Failed to delete goal');
       fetchGoals();
     } catch (err) {
