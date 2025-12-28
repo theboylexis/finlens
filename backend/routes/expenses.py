@@ -117,7 +117,10 @@ async def create_expense(
     if not row:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create expense"
+            detail={
+                "error": "Failed to create expense",
+                "hint": "Database insert failed. Please check input data and try again."
+            }
         )
     
     # Check budget alerts for this category
@@ -214,7 +217,10 @@ async def suggest_category(description: str):
     if not description or not description.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Description cannot be empty"
+            detail={
+                "error": "Description cannot be empty",
+                "hint": "Provide a non-empty description for expense categorization."
+            }
         )
     
     categorizer = get_categorizer()
@@ -238,7 +244,11 @@ async def get_expense(
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Expense {expense_id} not found"
+            detail={
+                "error": "Expense not found",
+                "expense_id": expense_id,
+                "hint": "Check if the expense ID is correct or exists."
+            }
         )
     
     return dict(row)
@@ -265,7 +275,11 @@ async def update_expense(
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Expense {expense_id} not found"
+            detail={
+                "error": "Expense not found",
+                "expense_id": expense_id,
+                "hint": "Cannot update non-existent expense."
+            }
         )
     
     # Build update query
@@ -336,7 +350,11 @@ async def delete_expense(
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Expense {expense_id} not found"
+            detail={
+                "error": "Expense not found",
+                "expense_id": expense_id,
+                "hint": "Cannot delete non-existent expense."
+            }
         )
     
     await db.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))

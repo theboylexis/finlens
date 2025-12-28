@@ -101,7 +101,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
             <div>
                 <label htmlFor="amount" className={labelClass}>Amount *</label>
                 <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b] text-sm">₵</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b] text-sm" aria-hidden="true">₵</span>
                     <input
                         type="number"
                         id="amount"
@@ -111,9 +111,11 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
                         onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                         className={`${inputClass} pl-7 ${errors.amount ? 'border-red-500' : ''}`}
                         placeholder="0.00"
+                        aria-invalid={!!errors.amount}
+                        aria-describedby={errors.amount ? 'amount-error' : undefined}
                     />
                 </div>
-                {errors.amount && <p className="mt-1 text-xs text-red-400">{errors.amount}</p>}
+                {errors.amount && <p id="amount-error" className="mt-1 text-xs text-red-400" role="alert">{errors.amount}</p>}
             </div>
 
             {/* Description */}
@@ -126,8 +128,10 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className={`${inputClass} ${errors.description ? 'border-red-500' : ''}`}
                     placeholder="e.g., Lunch at restaurant"
+                    aria-invalid={!!errors.description}
+                    aria-describedby={errors.description ? 'description-error' : undefined}
                 />
-                {errors.description && <p className="mt-1 text-xs text-red-400">{errors.description}</p>}
+                {errors.description && <p id="description-error" className="mt-1 text-xs text-red-400" role="alert">{errors.description}</p>}
             </div>
 
             {/* AI Category Suggestion */}
@@ -148,7 +152,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
             {/* Category Selection */}
             <div>
                 <label className={labelClass}>Category</label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Expense categories">
                     {categories.map((cat) => (
                         <button
                             key={cat.id}
@@ -158,8 +162,10 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
                                 ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400'
                                 : 'bg-[#0f0f0f] border border-[#262626] text-[#a1a1aa] hover:border-[#404040]'
                                 }`}
+                            aria-pressed={formData.category === cat.name}
+                            aria-label={`Select category ${cat.name}`}
                         >
-                            <span className="mr-1">{cat.icon}</span>{cat.name}
+                            <span className="mr-1" aria-hidden="true">{cat.icon}</span>{cat.name}
                         </button>
                     ))}
                 </div>
@@ -174,8 +180,10 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className={`${inputClass} ${errors.date ? 'border-red-500' : ''}`}
+                    aria-invalid={!!errors.date}
+                    aria-describedby={errors.date ? 'date-error' : undefined}
                 />
-                {errors.date && <p className="mt-1 text-xs text-red-400">{errors.date}</p>}
+                {errors.date && <p id="date-error" className="mt-1 text-xs text-red-400" role="alert">{errors.date}</p>}
             </div>
 
             {/* Payment Method */}
@@ -186,6 +194,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
                     value={formData.payment_method}
                     onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
                     className={inputClass}
+                    aria-label="Select payment method"
                 >
                     <option value="">Select payment method</option>
                     <option value="Cash">Cash</option>
@@ -198,7 +207,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
 
             {/* Submit Error */}
             {errors.submit && (
-                <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md">
+                <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md" role="alert" aria-live="assertive">
                     <p className="text-xs text-red-400">{errors.submit}</p>
                 </div>
             )}
