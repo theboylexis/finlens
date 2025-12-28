@@ -151,7 +151,7 @@ async def debug_env():
 
 
 # Include routers
-from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions
+from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(expenses.router, prefix="/api/expenses", tags=["Expenses"])
@@ -163,6 +163,7 @@ app.include_router(goals.router, prefix="/api/goals", tags=["Savings Goals"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["Spending Alerts"])
 app.include_router(splits.router, prefix="/api/splits", tags=["Split Bills"])
 app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["Subscriptions"])
+app.include_router(income.router, prefix="/api/income", tags=["Income"])
 
 
 if __name__ == "__main__":

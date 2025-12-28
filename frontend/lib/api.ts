@@ -265,3 +265,80 @@ export async function deleteBudget(category: string): Promise<void> {
   }
 }
 
+
+// Income API
+export interface Income {
+  id: number;
+  user_id: number;
+  amount: number;
+  source: string;
+  category: string;
+  date: string;
+  is_recurring: boolean;
+  created_at: string;
+}
+
+export interface IncomeCreate {
+  amount: number;
+  source: string;
+  category: string;
+  date: string;
+  is_recurring: boolean;
+}
+
+export interface IncomeSummary {
+  total_income: number;
+  month: number;
+  year: number;
+}
+
+export async function fetchIncome(
+  startDate?: string,
+  endDate?: string,
+  limit: number = 50
+): Promise<Income[]> {
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  params.append('limit', limit.toString());
+
+  const response = await apiFetch(`/api/income/?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch income');
+  }
+  return response.json();
+}
+
+export async function createIncome(income: IncomeCreate): Promise<Income> {
+  const response = await apiFetch('/api/income/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(income),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create income');
+  }
+  return response.json();
+}
+
+export async function deleteIncome(id: number): Promise<void> {
+  const response = await apiFetch(`/api/income/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete income');
+  }
+}
+
+export async function getIncomeSummary(month?: number, year?: number): Promise<IncomeSummary> {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month.toString());
+  if (year) params.append('year', year.toString());
+
+  const response = await apiFetch(`/api/income/summary?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch income summary');
+  }
+  return response.json();
+}
+

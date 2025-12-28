@@ -533,4 +533,31 @@ SubscriptionUpdate.model_rebuild()
 SubscriptionResponse.model_rebuild()
 
 
+# ============================================================================
+# Income Models
+# ============================================================================
+
+class IncomeCreate(BaseModel):
+    """Request model for adding income."""
+    amount: float = Field(..., gt=0, description="Income amount")
+    source: str = Field(..., min_length=1, max_length=100, description="Source of income (e.g. Job)")
+    category: str = Field(..., min_length=1, max_length=50, description="Category (e.g. Salary, Gift)")
+    date: DateType = Field(..., description="Date received")
+    is_recurring: bool = Field(False, description="Is this a recurring income?")
+
+class IncomeResponse(BaseModel):
+    """Response model for income data."""
+    id: int
+    user_id: int
+    amount: float
+    source: str
+    category: str
+    date: DateType
+    is_recurring: bool
+    created_at: DateTimeType
+    
+    class Config:
+        from_attributes = True
+
+
 

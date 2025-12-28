@@ -217,6 +217,23 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Incomes table
+CREATE TABLE IF NOT EXISTS incomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    amount REAL NOT NULL,
+    source TEXT NOT NULL,
+    category TEXT NOT NULL,
+    date DATE NOT NULL,
+    is_recurring INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
+CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id);
 """
 
 # SQL Schema - PostgreSQL version
@@ -403,6 +420,22 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Incomes table
+CREATE TABLE IF NOT EXISTS incomes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    amount DECIMAL(10,2) NOT NULL,
+    source TEXT NOT NULL,
+    category TEXT NOT NULL,
+    date DATE NOT NULL,
+    is_recurring BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
+CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id);
 """
 
 # Pre-defined categories with regex patterns
@@ -787,6 +820,30 @@ class Database:
                     print("✓ PostgreSQL migration complete for budget_alert_tracking")
             except Exception as e:
                 print(f"Warning during Postgres migration check for budget_alert_tracking: {e}")
+
+            # Check for incomes table
+            try:
+                tables = await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'incomes'")
+                if not tables:
+                    print("🚀 Migrating PostgreSQL: Creating incomes table...")
+                    await conn.execute("""
+                        CREATE TABLE IF NOT EXISTS incomes (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                            amount DECIMAL(10,2) NOT NULL,
+                            source TEXT NOT NULL,
+                            category TEXT NOT NULL,
+                            date DATE NOT NULL,
+                            is_recurring BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
+                        CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id);
+                    """)
+                    print("✓ PostgreSQL migration complete for incomes")
+            except Exception as e:
+                print(f"Warning during Postgres migration check for incomes: {e}")
 
             # Insert default categories if not exists
             for cat_data in CATEGORIES_DATA:
