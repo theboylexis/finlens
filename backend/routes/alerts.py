@@ -11,7 +11,7 @@ import aiosqlite
 from database import get_db
 from models import AlertResponse, AlertsSummary, BudgetStatusWithAlert
 from services.alerts import get_unread_alerts, get_unread_count, mark_alert_read, dismiss_alert, mark_all_read
-from dependencies import get_current_user
+from dependencies import get_current_user, require_auth
 from typing import List, Optional
 
 router = APIRouter()
