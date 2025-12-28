@@ -517,7 +517,15 @@ class PostgresConnectionWrapper:
                     pass
                 else:
                     raise
+        elif original_sql.strip().upper().startswith('SELECT'):
+            # SELECT queries - fetch all results
+            if parameters:
+                rows = await self._conn.fetch(sql, *parameters)
+            else:
+                rows = await self._conn.fetch(sql)
+            result = rows if rows else []
         else:
+            # UPDATE, DELETE, etc.
             if parameters:
                 await self._conn.execute(sql, *parameters)
             else:
