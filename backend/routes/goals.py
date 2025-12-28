@@ -66,7 +66,7 @@ async def list_goals(
         params.append(current_user["id"])
     
     if not include_completed:
-        base_query += " AND is_completed = 0"
+        base_query += " AND is_completed = FALSE"
     
     base_query += " ORDER BY created_at DESC"
     
@@ -212,7 +212,7 @@ async def add_contribution(
         await db.execute(
             """
             UPDATE savings_goals 
-            SET current_amount = ?, is_completed = 1, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            SET current_amount = ?, is_completed = TRUE, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
             (new_amount, goal_id)

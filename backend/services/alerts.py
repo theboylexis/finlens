@@ -80,7 +80,7 @@ async def get_unread_alerts(db: aiosqlite.Connection, limit: int = 10) -> list[d
     cursor = await db.execute(
         """
         SELECT * FROM alerts 
-        WHERE is_dismissed = 0 
+        WHERE is_dismissed = FALSE 
         ORDER BY created_at DESC 
         LIMIT ?
         """,
@@ -93,7 +93,7 @@ async def get_unread_alerts(db: aiosqlite.Connection, limit: int = 10) -> list[d
 async def get_unread_count(db: aiosqlite.Connection) -> int:
     """Get count of unread alerts."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_dismissed = 0"
+        "SELECT COUNT(*) FROM alerts WHERE is_read = FALSE AND is_dismissed = FALSE"
     )
     row = await cursor.fetchone()
     return row[0] if row else 0
@@ -102,7 +102,7 @@ async def get_unread_count(db: aiosqlite.Connection) -> int:
 async def mark_alert_read(db: aiosqlite.Connection, alert_id: int) -> bool:
     """Mark an alert as read."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_read = 1 WHERE id = ?",
+        "UPDATE alerts SET is_read = TRUE WHERE id = ?",
         (alert_id,)
     )
     await db.commit()
@@ -112,7 +112,7 @@ async def mark_alert_read(db: aiosqlite.Connection, alert_id: int) -> bool:
 async def dismiss_alert(db: aiosqlite.Connection, alert_id: int) -> bool:
     """Dismiss an alert."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_dismissed = 1 WHERE id = ?",
+        "UPDATE alerts SET is_dismissed = TRUE WHERE id = ?",
         (alert_id,)
     )
     await db.commit()
@@ -122,7 +122,7 @@ async def dismiss_alert(db: aiosqlite.Connection, alert_id: int) -> bool:
 async def mark_all_read(db: aiosqlite.Connection) -> int:
     """Mark all alerts as read. Returns count of updated alerts."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_read = 1 WHERE is_read = 0"
+        "UPDATE alerts SET is_read = TRUE WHERE is_read = FALSE"
     )
     await db.commit()
     return cursor.rowcount
