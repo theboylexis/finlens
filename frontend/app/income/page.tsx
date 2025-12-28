@@ -35,7 +35,7 @@ export default function IncomePage() {
         <div className="flex min-h-screen bg-black font-sans">
             <Sidebar />
 
-            <main className="flex-1 pt-8 px-4 pb-20 max-w-lg mx-auto lg:ml-60">
+            <main className="flex-1 pt-20 lg:pt-8 px-4 pb-20 max-w-lg mx-auto lg:ml-60">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
