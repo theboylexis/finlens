@@ -90,7 +90,16 @@ async def signup(
         )
     
     # Create user
-    user = await create_user(db, data.email, data.password, data.name)
+    try:
+        user = await create_user(db, data.email, data.password, data.name)
+    except Exception as e:
+        # Handle race condition where email was registered between check and insert
+        if "unique" in str(e).lower() or "duplicate" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        raise
     
     # Generate token
     access_token = create_access_token({"sub": str(user["id"])})
@@ -148,3 +157,20 @@ async def get_me(user: dict = Depends(require_auth)):
 async def verify_token(user: dict = Depends(require_auth)):
     """Verify that token is valid."""
     return {"valid": True, "user_id": user["id"]}
+
+
+# TEMPORARY: Delete user by email (REMOVE THIS AFTER USE!)
+@router.delete("/admin/delete-user/{email}")
+async def delete_user_by_email(
+    email: str,
+    db: aiosqlite.Connection = Depends(get_db)
+):
+    """Temporary endpoint to delete a user by email. REMOVE AFTER USE!"""
+    email = email.lower().strip()
+    
+    # Delete the user
+    await db.execute("DELETE FROM users WHERE email = ?", (email,))
+    await db.commit()
+    
+    return {"message": f"User {email} deleted successfully"}
+
