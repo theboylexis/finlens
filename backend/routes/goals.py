@@ -28,12 +28,21 @@ def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
     target_amount = row["target_amount"]
     progress = (current_amount / target_amount * 100) if target_amount > 0 else 0
     
+    # Handle target_date (can be string, date object, or None)
+    target_date_value = row["target_date"]
+    if target_date_value is None:
+        parsed_target_date = None
+    elif isinstance(target_date_value, date):
+        parsed_target_date = target_date_value
+    else:
+        parsed_target_date = date.fromisoformat(str(target_date_value))
+    
     return GoalResponse(
         id=row["id"],
         name=row["name"],
-        target_amount=target_amount,
-        current_amount=current_amount,
-        target_date=row["target_date"],
+        target_amount=float(target_amount),
+        current_amount=float(current_amount),
+        target_date=target_date_value,
         icon=row["icon"] or "🎯",
         color=row["color"] or "#6366f1",
         is_completed=bool(row["is_completed"]),
@@ -41,9 +50,7 @@ def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         progress_percentage=round(progress, 1),
-        days_remaining=calculate_days_remaining(
-            date.fromisoformat(row["target_date"]) if row["target_date"] else None
-        )
+        days_remaining=calculate_days_remaining(parsed_target_date)
     )
 
 
