@@ -11,6 +11,8 @@ import aiosqlite
 from database import get_db
 from models import AlertResponse, AlertsSummary, BudgetStatusWithAlert
 from services.alerts import get_unread_alerts, get_unread_count, mark_alert_read, dismiss_alert, mark_all_read
+from dependencies import get_current_user
+from typing import List, Optional
 
 router = APIRouter()
 
@@ -90,7 +92,8 @@ async def mark_all_alerts_read(db: aiosqlite.Connection = Depends(get_db)):
 
 @router.get("/budget-status", response_model=List[BudgetStatusWithAlert])
 async def get_budget_status_with_alerts(
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
 ):
     """Get all budget statuses with alert levels."""
     # Get current month boundaries
@@ -109,11 +112,12 @@ async def get_budget_status_with_alerts(
             COALESCE(SUM(e.amount), 0) as spent
         FROM budgets b
         LEFT JOIN expenses e ON e.category = b.category 
-            AND e.date >= ? AND e.date <= ?
+            AND e.date >= ? AND e.date <= ? AND e.user_id = ?
+        WHERE b.user_id = ?
         GROUP BY b.category, b.monthly_limit
         ORDER BY b.category
         """,
-        (month_start.isoformat(), month_end.isoformat())
+        (month_start.isoformat(), month_end.isoformat(), user["id"], user["id"])
     )
     rows = await cursor.fetchall()
     
@@ -160,9 +164,12 @@ async def get_budget_status_with_alerts(
 # ============================================================================
 
 @router.get("/budgets")
-async def get_all_budgets(db: aiosqlite.Connection = Depends(get_db)):
-    """Get all budgets."""
-    cursor = await db.execute("SELECT id, category, monthly_limit FROM budgets ORDER BY category")
+async def get_all_budgets(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    """Get all budgets for current user."""
+    cursor = await db.execute("SELECT id, category, monthly_limit FROM budgets WHERE user_id = ? ORDER BY category", (user["id"],))
     rows = await cursor.fetchall()
     return [{"id": r["id"], "category": r["category"], "monthly_limit": r["monthly_limit"]} for r in rows]
 
@@ -171,24 +178,29 @@ async def get_all_budgets(db: aiosqlite.Connection = Depends(get_db)):
 async def create_budget(
     category: str,
     monthly_limit: float,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
 ):
     """Create or update a budget for a category."""
     await db.execute(
         """
-        INSERT INTO budgets (category, monthly_limit) VALUES (?, ?)
-        ON CONFLICT(category) DO UPDATE SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
+        INSERT INTO budgets (user_id, category, monthly_limit) VALUES (?, ?, ?)
+        ON CONFLICT(user_id, category) DO UPDATE SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
         """,
-        (category, monthly_limit, monthly_limit)
+        (user["id"], category, monthly_limit, monthly_limit)
     )
     await db.commit()
     return {"status": "ok", "category": category, "monthly_limit": monthly_limit}
 
 
 @router.delete("/budgets/{category}")
-async def delete_budget(category: str, db: aiosqlite.Connection = Depends(get_db)):
+async def delete_budget(
+    category: str, 
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
     """Delete a budget."""
-    await db.execute("DELETE FROM budgets WHERE category = ?", (category,))
+    await db.execute("DELETE FROM budgets WHERE category = ? AND user_id = ?", (category, user["id"]))
     await db.commit()
     return {"status": "ok"}
 

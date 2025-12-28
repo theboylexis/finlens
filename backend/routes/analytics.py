@@ -262,9 +262,10 @@ async def get_budget_status(
         FROM budgets b
         LEFT JOIN expenses e ON b.category = e.category 
             AND e.date >= ? AND e.date <= ? AND {user_filter}
+        WHERE b.user_id = ?
         GROUP BY b.category, b.monthly_limit
         """,
-        (start_date, end_date, *user_params)
+        (start_date, end_date, *user_params, user["id"])
     )
     rows = await cursor.fetchall()
     
@@ -316,7 +317,7 @@ async def get_safe_to_spend(
     user_filter, user_params = build_user_filter(user)
     
     # Get total monthly budget
-    cursor = await db.execute("SELECT COALESCE(SUM(monthly_limit), 0) as total FROM budgets")
+    cursor = await db.execute("SELECT COALESCE(SUM(monthly_limit), 0) as total FROM budgets WHERE user_id = ?", (user["id"],))
     row = await cursor.fetchone()
     total_budget = float(row["total"]) if row else 0.0
     

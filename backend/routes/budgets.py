@@ -9,6 +9,8 @@ import aiosqlite
 
 from database import get_db
 from models import BudgetCreate, BudgetResponse
+from dependencies import get_current_user
+from typing import List, Optional
 
 router = APIRouter()
 
@@ -16,13 +18,14 @@ router = APIRouter()
 @router.post("/", response_model=BudgetResponse, status_code=status.HTTP_201_CREATED)
 async def create_budget(
     budget: BudgetCreate,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
 ):
     """Create or update a budget for a category."""
-    # Check if budget already exists
+    # Check if budget already exists for this user/category
     cursor = await db.execute(
-        "SELECT id FROM budgets WHERE category = ?",
-        (budget.category,)
+        "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+        (budget.category, user["id"])
     )
     existing = await cursor.fetchone()
     
@@ -41,10 +44,10 @@ async def create_budget(
         # Create new budget
         cursor = await db.execute(
             """
-            INSERT INTO budgets (category, monthly_limit)
-            VALUES (?, ?)
+            INSERT INTO budgets (user_id, category, monthly_limit)
+            VALUES (?, ?, ?)
             """,
-            (budget.category, budget.monthly_limit)
+            (user["id"], budget.category, budget.monthly_limit)
         )
         budget_id = cursor.lastrowid
     
@@ -61,10 +64,14 @@ async def create_budget(
 
 
 @router.get("/", response_model=List[BudgetResponse])
-async def get_budgets(db: aiosqlite.Connection = Depends(get_db)):
-    """Get all budgets."""
+async def get_budgets(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    """Get all budgets for current user."""
     cursor = await db.execute(
-        "SELECT * FROM budgets ORDER BY category"
+        "SELECT * FROM budgets WHERE user_id = ? ORDER BY category",
+        (user["id"],)
     )
     rows = await cursor.fetchall()
     
@@ -74,12 +81,13 @@ async def get_budgets(db: aiosqlite.Connection = Depends(get_db)):
 @router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_budget(
     budget_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(get_current_user)
 ):
     """Delete a budget."""
     cursor = await db.execute(
-        "SELECT id FROM budgets WHERE id = ?",
-        (budget_id,)
+        "SELECT id FROM budgets WHERE id = ? AND user_id = ?",
+        (budget_id, user["id"])
     )
     existing = await cursor.fetchone()
     

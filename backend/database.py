@@ -59,10 +59,13 @@ CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
 -- Budgets table
 CREATE TABLE IF NOT EXISTS budgets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL UNIQUE,
+    user_id INTEGER,
+    category TEXT NOT NULL,
     monthly_limit REAL NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, category),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- AI Audit Log table
@@ -245,10 +248,12 @@ CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
 -- Budgets table
 CREATE TABLE IF NOT EXISTS budgets (
     id SERIAL PRIMARY KEY,
-    category TEXT NOT NULL UNIQUE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
     monthly_limit DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, category)
 );
 
 -- AI Audit Log table
@@ -713,6 +718,26 @@ class Database:
                     if "already exists" not in str(e):
                         print(f"Warning: {e}")
             
+            # Check for user_id column in budgets table
+            try:
+                # Check column list
+                columns = await conn.fetch("SELECT column_name FROM information_schema.columns WHERE table_name = 'budgets'")
+                column_names = [r['column_name'] for r in columns]
+                
+                if 'user_id' not in column_names and 'budgets' in [r[0] for r in await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")]:
+                    print("🚀 Migrating PostgreSQL: Adding user_id to budgets...")
+                    # 1. Add column
+                    await conn.execute("ALTER TABLE budgets ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE")
+                    # 2. Assign existing budgets to first user
+                    first_user = await conn.fetchval("SELECT id FROM users LIMIT 1")
+                    if first_user:
+                        await conn.execute("UPDATE budgets SET user_id = $1", first_user)
+                    # 3. Add unique constraint
+                    await conn.execute("ALTER TABLE budgets ADD CONSTRAINT unique_user_category UNIQUE (user_id, category)")
+                    print("✓ PostgreSQL migration complete")
+            except Exception as e:
+                print(f"Warning during Postgres migration check: {e}")
+
             # Insert default categories if not exists
             for cat_data in CATEGORIES_DATA:
                 try:
