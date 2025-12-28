@@ -129,6 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_goals_completed ON savings_goals(is_completed);
 -- Spending Alerts table
 CREATE TABLE IF NOT EXISTS alerts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
     type TEXT NOT NULL,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
@@ -136,21 +137,25 @@ CREATE TABLE IF NOT EXISTS alerts (
     threshold_percent INTEGER,
     is_read INTEGER DEFAULT 0,
     is_dismissed INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_alerts_read ON alerts(is_read);
 CREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(type);
 CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts(created_at);
+CREATE INDEX IF NOT EXISTS idx_alerts_user_id ON alerts(user_id);
 
 -- Budget Alert Settings table
 CREATE TABLE IF NOT EXISTS budget_alert_tracking (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
     category TEXT NOT NULL,
     threshold_percent INTEGER NOT NULL,
     month TEXT NOT NULL,
     triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(category, threshold_percent, month)
+    UNIQUE(user_id, category, threshold_percent, month),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Friends/Contacts table for bill splitting
@@ -315,6 +320,7 @@ CREATE INDEX IF NOT EXISTS idx_goals_completed ON savings_goals(is_completed);
 -- Spending Alerts table
 CREATE TABLE IF NOT EXISTS alerts (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     type TEXT NOT NULL,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
@@ -328,15 +334,17 @@ CREATE TABLE IF NOT EXISTS alerts (
 CREATE INDEX IF NOT EXISTS idx_alerts_read ON alerts(is_read);
 CREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(type);
 CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts(created_at);
+CREATE INDEX IF NOT EXISTS idx_alerts_user_id ON alerts(user_id);
 
 -- Budget Alert Settings table
 CREATE TABLE IF NOT EXISTS budget_alert_tracking (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     category TEXT NOT NULL,
     threshold_percent INTEGER NOT NULL,
     month TEXT NOT NULL,
     triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(category, threshold_percent, month)
+    UNIQUE(user_id, category, threshold_percent, month)
 );
 
 -- Friends/Contacts table for bill splitting

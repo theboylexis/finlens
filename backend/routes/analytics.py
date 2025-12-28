@@ -261,11 +261,11 @@ async def get_budget_status(
             COALESCE(SUM(e.amount), 0) as current_spending
         FROM budgets b
         LEFT JOIN expenses e ON b.category = e.category 
-            AND e.date >= ? AND e.date <= ? AND {user_filter}
+            AND e.date >= ? AND e.date <= ? AND e.user_id = ?
         WHERE b.user_id = ?
         GROUP BY b.category, b.monthly_limit
         """,
-        (start_date, end_date, *user_params, user["id"])
+        (start_date, end_date, user["id"], user["id"])
     )
     rows = await cursor.fetchall()
     
@@ -342,8 +342,9 @@ async def get_safe_to_spend(
             current_amount,
             target_date
         FROM savings_goals
-        WHERE is_completed = 0 AND target_date IS NOT NULL
-        """
+        WHERE user_id = ? AND is_completed = 0 AND target_date IS NOT NULL
+        """,
+        (user["id"],)
     )
     goals_rows = await cursor.fetchall()
     

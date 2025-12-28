@@ -1,13 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuthHeaders, API_URL } from '@/lib/api';
-
-interface Budget {
-    id: number;
-    category: string;
-    monthly_limit: number;
-}
+import { getAuthHeaders, API_URL, fetchBudgets, createBudget, deleteBudget, Budget } from '@/lib/api';
 
 interface Category {
     id: number;
@@ -31,11 +25,11 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [budgetsRes, categoriesRes] = await Promise.all([
-                    fetch(`${API_URL}/api/alerts/budgets`, { headers: getAuthHeaders() }),
+                const [budgetsData, categoriesRes] = await Promise.all([
+                    fetchBudgets(),
                     fetch(`${API_URL}/api/categories/`)
                 ]);
-                if (budgetsRes.ok) setBudgets(await budgetsRes.json());
+                setBudgets(budgetsData);
                 if (categoriesRes.ok) setCategories(await categoriesRes.json());
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -50,17 +44,12 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
         if (!selectedCategory || !amount) return;
         setSaving(true);
         try {
-            const response = await fetch(
-                `${API_URL}/api/alerts/budgets?category=${encodeURIComponent(selectedCategory)}&monthly_limit=${amount}`,
-                { method: 'POST', headers: getAuthHeaders() }
-            );
-            if (response.ok) {
-                const updated = await fetch(`${API_URL}/api/alerts/budgets`, { headers: getAuthHeaders() });
-                if (updated.ok) setBudgets(await updated.json());
-                setSelectedCategory('');
-                setAmount('');
-                onSuccess();
-            }
+            await createBudget(selectedCategory, parseFloat(amount));
+            const updatedBudgets = await fetchBudgets();
+            setBudgets(updatedBudgets);
+            setSelectedCategory('');
+            setAmount('');
+            onSuccess();
         } catch (error) {
             console.error('Error saving budget:', error);
         } finally {
@@ -71,10 +60,7 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
     const handleDelete = async (category: string) => {
         if (!confirm(`Delete budget for ${category}?`)) return;
         try {
-            await fetch(`${API_URL}/api/alerts/budgets/${encodeURIComponent(category)}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
-            });
+            await deleteBudget(category);
             setBudgets(budgets.filter(b => b.category !== category));
             onSuccess();
         } catch (error) {

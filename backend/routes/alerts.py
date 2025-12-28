@@ -39,11 +39,12 @@ def row_to_alert(row: aiosqlite.Row) -> AlertResponse:
 @router.get("/", response_model=AlertsSummary)
 async def list_alerts(
     limit: int = 10,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
-    """Get alerts summary with unread count."""
-    alerts = await get_unread_alerts(db, limit)
-    unread_count = await get_unread_count(db)
+    """Get alerts summary with unread count for current user."""
+    alerts = await get_unread_alerts(db, user["id"], limit)
+    unread_count = await get_unread_count(db, user["id"])
     
     return AlertsSummary(
         unread_count=unread_count,
@@ -58,10 +59,11 @@ async def list_alerts(
 @router.patch("/{alert_id}/read")
 async def mark_read(
     alert_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
-    """Mark an alert as read."""
-    success = await mark_alert_read(db, alert_id)
+    """Mark an alert as read for current user."""
+    success = await mark_alert_read(db, user["id"], alert_id)
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"status": "ok"}
@@ -70,19 +72,23 @@ async def mark_read(
 @router.delete("/{alert_id}")
 async def dismiss(
     alert_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
-    """Dismiss an alert."""
-    success = await dismiss_alert(db, alert_id)
+    """Dismiss an alert for current user."""
+    success = await dismiss_alert(db, user["id"], alert_id)
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"status": "ok"}
 
 
 @router.post("/mark-all-read")
-async def mark_all_alerts_read(db: aiosqlite.Connection = Depends(get_db)):
-    """Mark all alerts as read."""
-    count = await mark_all_read(db)
+async def mark_all_alerts_read(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
+):
+    """Mark all alerts as read for current user."""
+    count = await mark_all_read(db, user["id"])
     return {"status": "ok", "marked_read": count}
 
 
@@ -93,9 +99,9 @@ async def mark_all_alerts_read(db: aiosqlite.Connection = Depends(get_db)):
 @router.get("/budget-status", response_model=List[BudgetStatusWithAlert])
 async def get_budget_status_with_alerts(
     db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
-    """Get all budget statuses with alert levels."""
+    """Get all budget statuses with alert levels for current user."""
     # Get current month boundaries
     today = date.today()
     month_start = date(today.year, today.month, 1)
@@ -157,50 +163,4 @@ async def get_budget_status_with_alerts(
         ))
     
     return results
-
-
-# ============================================================================
-# Budget CRUD
-# ============================================================================
-
-@router.get("/budgets")
-async def get_all_budgets(
-    db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    """Get all budgets for current user."""
-    cursor = await db.execute("SELECT id, category, monthly_limit FROM budgets WHERE user_id = ? ORDER BY category", (user["id"],))
-    rows = await cursor.fetchall()
-    return [{"id": r["id"], "category": r["category"], "monthly_limit": r["monthly_limit"]} for r in rows]
-
-
-@router.post("/budgets")
-async def create_budget(
-    category: str,
-    monthly_limit: float,
-    db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    """Create or update a budget for a category."""
-    await db.execute(
-        """
-        INSERT INTO budgets (user_id, category, monthly_limit) VALUES (?, ?, ?)
-        ON CONFLICT(user_id, category) DO UPDATE SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
-        """,
-        (user["id"], category, monthly_limit, monthly_limit)
-    )
-    await db.commit()
-    return {"status": "ok", "category": category, "monthly_limit": monthly_limit}
-
-
-@router.delete("/budgets/{category}")
-async def delete_budget(
-    category: str, 
-    db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    """Delete a budget."""
-    await db.execute("DELETE FROM budgets WHERE category = ? AND user_id = ?", (category, user["id"]))
-    await db.commit()
-    return {"status": "ok"}
 

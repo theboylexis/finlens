@@ -129,29 +129,29 @@ async def create_expense(
     days_in_month = monthrange(today.year, today.month)[1]
     month_end = date(today.year, today.month, days_in_month)
     
-    # Get budget for this category
+    # Get budget for this category and user
     budget_cursor = await db.execute(
-        "SELECT monthly_limit FROM budgets WHERE category = ?",
-        (category,)
+        "SELECT monthly_limit FROM budgets WHERE category = ? AND user_id = ?",
+        (category, user_id)
     )
     budget_row = await budget_cursor.fetchone()
     
     if budget_row:
-        # Calculate total spent this month for this category
+        # Calculate total spent this month for this category and user
         spent_cursor = await db.execute(
             """
             SELECT COALESCE(SUM(amount), 0) as total
             FROM expenses 
-            WHERE category = ? AND date >= ? AND date <= ?
+            WHERE category = ? AND date >= ? AND date <= ? AND user_id = ?
             """,
-            (category, month_start.isoformat(), month_end.isoformat())
+            (category, month_start.isoformat(), month_end.isoformat(), user_id)
         )
         spent_row = await spent_cursor.fetchone()
         total_spent = spent_row["total"] if spent_row else 0
         
         # Check and create alerts if thresholds crossed
         await check_and_create_budget_alerts(
-            db, category, total_spent, budget_row["monthly_limit"]
+            db, user_id, category, total_spent, budget_row["monthly_limit"]
         )
     
     return dict(row)

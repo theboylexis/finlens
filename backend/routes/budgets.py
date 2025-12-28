@@ -9,7 +9,7 @@ import aiosqlite
 
 from database import get_db
 from models import BudgetCreate, BudgetResponse
-from dependencies import get_current_user
+from dependencies import require_auth
 from typing import List, Optional
 
 router = APIRouter()
@@ -19,9 +19,9 @@ router = APIRouter()
 async def create_budget(
     budget: BudgetCreate,
     db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
-    """Create or update a budget for a category."""
+    """Create or update a budget for a category for the current user."""
     # Check if budget already exists for this user/category
     cursor = await db.execute(
         "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
@@ -35,9 +35,9 @@ async def create_budget(
             """
             UPDATE budgets 
             SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE category = ?
+            WHERE category = ? AND user_id = ?
             """,
-            (budget.monthly_limit, budget.category)
+            (budget.monthly_limit, budget.category, user["id"])
         )
         budget_id = existing["id"]
     else:
@@ -66,7 +66,7 @@ async def create_budget(
 @router.get("/", response_model=List[BudgetResponse])
 async def get_budgets(
     db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get all budgets for current user."""
     cursor = await db.execute(
@@ -78,26 +78,26 @@ async def get_budgets(
     return [dict(row) for row in rows]
 
 
-@router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{category}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_budget(
-    budget_id: int,
+    category: str,
     db: aiosqlite.Connection = Depends(get_db),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
-    """Delete a budget."""
+    """Delete a budget for a category."""
     cursor = await db.execute(
-        "SELECT id FROM budgets WHERE id = ? AND user_id = ?",
-        (budget_id, user["id"])
+        "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+        (category, user["id"])
     )
     existing = await cursor.fetchone()
     
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Budget {budget_id} not found"
+            detail=f"Budget for category '{category}' not found"
         )
     
-    await db.execute("DELETE FROM budgets WHERE id = ?", (budget_id,))
+    await db.execute("DELETE FROM budgets WHERE category = ? AND user_id = ?", (category, user["id"]))
     await db.commit()
     
     return None

@@ -227,6 +227,41 @@ export async function getWeeklySummary(): Promise<WeeklySummary> {
   }
   return response.json();
 }
+// Budget API
+export interface Budget {
+  id: number;
+  category: string;
+  monthly_limit: number;
+  created_at: string;
+  updated_at: string;
+}
 
+export async function fetchBudgets(): Promise<Budget[]> {
+  const response = await apiFetch('/api/budgets/');
+  if (!response.ok) {
+    throw new Error('Failed to fetch budgets');
+  }
+  return response.json();
+}
 
+export async function createBudget(category: string, monthlyLimit: number): Promise<Budget> {
+  const response = await apiFetch('/api/budgets/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category, monthly_limit: monthlyLimit }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create budget');
+  }
+  return response.json();
+}
+
+export async function deleteBudget(category: string): Promise<void> {
+  const response = await apiFetch(`/api/budgets/${encodeURIComponent(category)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete budget');
+  }
+}
 

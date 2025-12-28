@@ -8,6 +8,7 @@ import aiosqlite
 
 async def check_and_create_budget_alerts(
     db: aiosqlite.Connection,
+    user_id: int,
     category: str,
     spent: float,
     budget_limit: float
@@ -36,9 +37,9 @@ async def check_and_create_budget_alerts(
             cursor = await db.execute(
                 """
                 SELECT id FROM budget_alert_tracking 
-                WHERE category = ? AND threshold_percent = ? AND month = ?
+                WHERE user_id = ? AND category = ? AND threshold_percent = ? AND month = ?
                 """,
-                (category, threshold, current_month)
+                (user_id, category, threshold, current_month)
             )
             existing = await cursor.fetchone()
             
@@ -46,19 +47,19 @@ async def check_and_create_budget_alerts(
                 # Create the alert
                 cursor = await db.execute(
                     """
-                    INSERT INTO alerts (type, title, message, category, threshold_percent)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO alerts (user_id, type, title, message, category, threshold_percent)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    ("budget_warning", f"{emoji} {title}", message, category, threshold)
+                    (user_id, "budget_warning", f"{emoji} {title}", message, category, threshold)
                 )
                 
                 # Mark this threshold as triggered for the month
                 await db.execute(
                     """
-                    INSERT OR IGNORE INTO budget_alert_tracking (category, threshold_percent, month)
-                    VALUES (?, ?, ?)
+                    INSERT OR IGNORE INTO budget_alert_tracking (user_id, category, threshold_percent, month)
+                    VALUES (?, ?, ?, ?)
                     """,
-                    (category, threshold, current_month)
+                    (user_id, category, threshold, current_month)
                 )
                 
                 new_alerts.append({
@@ -75,54 +76,56 @@ async def check_and_create_budget_alerts(
     return new_alerts
 
 
-async def get_unread_alerts(db: aiosqlite.Connection, limit: int = 10) -> list[dict]:
-    """Get unread and not dismissed alerts."""
+async def get_unread_alerts(db: aiosqlite.Connection, user_id: int, limit: int = 10) -> list[dict]:
+    """Get unread and not dismissed alerts for a specific user."""
     cursor = await db.execute(
         """
         SELECT * FROM alerts 
-        WHERE is_dismissed = FALSE 
+        WHERE user_id = ? AND is_dismissed = FALSE 
         ORDER BY created_at DESC 
         LIMIT ?
         """,
-        (limit,)
+        (user_id, limit)
     )
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
 
 
-async def get_unread_count(db: aiosqlite.Connection) -> int:
-    """Get count of unread alerts."""
+async def get_unread_count(db: aiosqlite.Connection, user_id: int) -> int:
+    """Get count of unread alerts for a specific user."""
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM alerts WHERE is_read = FALSE AND is_dismissed = FALSE"
+        "SELECT COUNT(*) FROM alerts WHERE user_id = ? AND is_read = FALSE AND is_dismissed = FALSE",
+        (user_id,)
     )
     row = await cursor.fetchone()
     return row[0] if row else 0
 
 
-async def mark_alert_read(db: aiosqlite.Connection, alert_id: int) -> bool:
-    """Mark an alert as read."""
+async def mark_alert_read(db: aiosqlite.Connection, user_id: int, alert_id: int) -> bool:
+    """Mark an alert as read for a specific user."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_read = TRUE WHERE id = ?",
-        (alert_id,)
+        "UPDATE alerts SET is_read = TRUE WHERE id = ? AND user_id = ?",
+        (alert_id, user_id)
     )
     await db.commit()
     return cursor.rowcount > 0
 
 
-async def dismiss_alert(db: aiosqlite.Connection, alert_id: int) -> bool:
-    """Dismiss an alert."""
+async def dismiss_alert(db: aiosqlite.Connection, user_id: int, alert_id: int) -> bool:
+    """Dismiss an alert for a specific user."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_dismissed = TRUE WHERE id = ?",
-        (alert_id,)
+        "UPDATE alerts SET is_dismissed = TRUE WHERE id = ? AND user_id = ?",
+        (alert_id, user_id)
     )
     await db.commit()
     return cursor.rowcount > 0
 
 
-async def mark_all_read(db: aiosqlite.Connection) -> int:
-    """Mark all alerts as read. Returns count of updated alerts."""
+async def mark_all_read(db: aiosqlite.Connection, user_id: int) -> int:
+    """Mark all alerts as read for a specific user. Returns count of updated alerts."""
     cursor = await db.execute(
-        "UPDATE alerts SET is_read = TRUE WHERE is_read = FALSE"
+        "UPDATE alerts SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE",
+        (user_id,)
     )
     await db.commit()
     return cursor.rowcount
