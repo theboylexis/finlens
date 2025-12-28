@@ -10,8 +10,14 @@ import re
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, date, timedelta
 
+import os
+
 from services.gemini_client import get_gemini_client
 from models import NLQueryRequest, NLQueryResponse
+
+# Currency settings from environment
+CURRENCY_CODE = os.getenv("CURRENCY_CODE", "GHS")
+CURRENCY_SYMBOL = os.getenv("CURRENCY_SYMBOL", "GH₵")
 
 
 class QueryEngine:
@@ -240,9 +246,10 @@ Respond with JSON:
         template_key: str
     ) -> str:
         """Generate natural language explanation of results."""
-        system_instruction = """You are a financial assistant explaining query results.
+        system_instruction = f"""You are a financial assistant explaining query results.
 Be concise, clear, and helpful. Focus on insights, not just restating data.
-Keep explanations under 2 sentences."""
+Keep explanations under 2 sentences.
+IMPORTANT: Always use {CURRENCY_CODE} ({CURRENCY_SYMBOL}) as the currency. Never use dollars ($) or any other currency."""
         
         prompt = f"""
 Query: "{query}"
