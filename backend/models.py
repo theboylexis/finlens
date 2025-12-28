@@ -229,6 +229,17 @@ class AnalyticsSummary(BaseModel):
     date_range_end: DateType
 
 
+class SafeToSpendResponse(BaseModel):
+    """Safe to spend calculation response."""
+    safe_to_spend_today: float = Field(..., description="Amount safe to spend today")
+    total_budget: float = Field(..., description="Total monthly budget across all categories")
+    spent_this_month: float = Field(..., description="Total spent this month")
+    goals_reserved: float = Field(..., description="Amount reserved for savings goals")
+    remaining_budget: float = Field(..., description="Budget remaining after spending")
+    days_remaining: int = Field(..., description="Days remaining in the month")
+    status: str = Field(..., description="Status: 'healthy', 'caution', or 'danger'")
+
+
 # ============================================================================
 # Savings Goals Models
 # ============================================================================
@@ -420,6 +431,69 @@ class BalancesResponse(BaseModel):
 
 
 # ============================================================================
+# Subscription Models
+# ============================================================================
+
+class BillingCycle(str, Enum):
+    """Billing cycle options."""
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+
+class SubscriptionCreate(BaseModel):
+    """Request model for creating a subscription."""
+    name: str = Field(..., min_length=1, max_length=100, description="Subscription name")
+    amount: float = Field(..., gt=0, description="Subscription amount")
+    billing_cycle: BillingCycle = Field(..., description="Billing frequency")
+    next_renewal: DateType = Field(..., description="Next renewal date")
+    category: Optional[str] = Field(None, max_length=50, description="Category")
+    reminder_days: int = Field(3, ge=0, le=30, description="Days before renewal to remind")
+    notes: Optional[str] = Field(None, max_length=500, description="Optional notes")
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v.strip()
+
+
+class SubscriptionUpdate(BaseModel):
+    """Request model for updating a subscription."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    amount: Optional[float] = Field(None, gt=0)
+    billing_cycle: Optional[BillingCycle] = None
+    next_renewal: Optional[DateType] = None
+    category: Optional[str] = Field(None, max_length=50)
+    is_active: Optional[bool] = None
+    reminder_days: Optional[int] = Field(None, ge=0, le=30)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class SubscriptionResponse(BaseModel):
+    """Response model for subscription data."""
+    id: int
+    name: str
+    amount: float
+    billing_cycle: str
+    next_renewal: DateType
+    category: Optional[str]
+    is_active: bool
+    reminder_days: int
+    notes: Optional[str]
+    created_at: DateTimeType
+    updated_at: DateTimeType
+    
+    # Computed fields
+    days_until_renewal: Optional[int] = None
+    monthly_cost: float = 0.0  # Normalized to monthly
+    
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
 # Rebuild models for Pydantic v2 compatibility with `from __future__ import annotations`
 # ============================================================================
 ExpenseCreate.model_rebuild()
@@ -438,6 +512,7 @@ AuditLogEntry.model_rebuild()
 SpendingByCategory.model_rebuild()
 SpendingTrend.model_rebuild()
 AnalyticsSummary.model_rebuild()
+SafeToSpendResponse.model_rebuild()
 GoalCreate.model_rebuild()
 GoalUpdate.model_rebuild()
 GoalResponse.model_rebuild()
@@ -453,6 +528,9 @@ SplitExpenseRequest.model_rebuild()
 SplitResponse.model_rebuild()
 BalanceSummary.model_rebuild()
 BalancesResponse.model_rebuild()
+SubscriptionCreate.model_rebuild()
+SubscriptionUpdate.model_rebuild()
+SubscriptionResponse.model_rebuild()
 
 
 

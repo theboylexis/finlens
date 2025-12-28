@@ -109,3 +109,124 @@ export async function deleteExpense(id: number): Promise<void> {
     throw new Error('Failed to delete expense');
   }
 }
+
+// Safe to Spend API
+export interface SafeToSpend {
+  safe_to_spend_today: number;
+  total_budget: number;
+  spent_this_month: number;
+  goals_reserved: number;
+  remaining_budget: number;
+  days_remaining: number;
+  status: 'healthy' | 'caution' | 'danger' | 'no_budget';
+}
+
+export async function getSafeToSpend(): Promise<SafeToSpend> {
+  const response = await apiFetch('/api/analytics/safe-to-spend');
+  if (!response.ok) {
+    throw new Error('Failed to fetch safe to spend');
+  }
+  return response.json();
+}
+
+// Subscriptions API
+export interface Subscription {
+  id: number;
+  name: string;
+  amount: number;
+  billing_cycle: 'weekly' | 'monthly' | 'yearly';
+  next_renewal: string;
+  category: string | null;
+  is_active: boolean;
+  reminder_days: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  days_until_renewal: number | null;
+  monthly_cost: number;
+}
+
+export interface SubscriptionCreate {
+  name: string;
+  amount: number;
+  billing_cycle: 'weekly' | 'monthly' | 'yearly';
+  next_renewal: string;
+  category?: string;
+  reminder_days?: number;
+  notes?: string;
+}
+
+export interface SubscriptionSummary {
+  total_monthly_cost: number;
+  total_yearly_cost: number;
+  subscription_count: number;
+}
+
+export async function getSubscriptions(): Promise<Subscription[]> {
+  const response = await apiFetch('/api/subscriptions/');
+  if (!response.ok) {
+    throw new Error('Failed to fetch subscriptions');
+  }
+  return response.json();
+}
+
+export async function getSubscriptionSummary(): Promise<SubscriptionSummary> {
+  const response = await apiFetch('/api/subscriptions/summary');
+  if (!response.ok) {
+    throw new Error('Failed to fetch subscription summary');
+  }
+  return response.json();
+}
+
+export async function getUpcomingRenewals(days: number = 7): Promise<Subscription[]> {
+  const response = await apiFetch(`/api/subscriptions/upcoming?days=${days}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming renewals');
+  }
+  return response.json();
+}
+
+export async function createSubscription(subscription: SubscriptionCreate): Promise<Subscription> {
+  const response = await apiFetch('/api/subscriptions/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(subscription),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create subscription');
+  }
+  return response.json();
+}
+
+export async function deleteSubscription(id: number): Promise<void> {
+  const response = await apiFetch(`/api/subscriptions/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete subscription');
+  }
+}
+
+// Weekly Summary API
+export interface WeeklySummary {
+  this_week_total: number;
+  this_week_count: number;
+  last_week_total: number;
+  change_percent: number;
+  top_category: string | null;
+  top_category_amount: number;
+  week_start: string;
+  week_end: string;
+  days_into_week: number;
+}
+
+export async function getWeeklySummary(): Promise<WeeklySummary> {
+  const response = await apiFetch('/api/analytics/weekly-summary');
+  if (!response.ok) {
+    throw new Error('Failed to fetch weekly summary');
+  }
+  return response.json();
+}
+
+
+

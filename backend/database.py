@@ -177,6 +177,26 @@ CREATE INDEX IF NOT EXISTS idx_splits_expense ON expense_splits(expense_id);
 CREATE INDEX IF NOT EXISTS idx_splits_friend ON expense_splits(friend_id);
 CREATE INDEX IF NOT EXISTS idx_splits_settled ON expense_splits(is_settled);
 
+-- Subscriptions table for recurring payments
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    name TEXT NOT NULL,
+    amount REAL NOT NULL,
+    billing_cycle TEXT NOT NULL,
+    next_renewal DATE NOT NULL,
+    category TEXT,
+    is_active INTEGER DEFAULT 1,
+    reminder_days INTEGER DEFAULT 3,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_next_renewal ON subscriptions(next_renewal);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_is_active ON subscriptions(is_active);
+
 -- Users table for authentication
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -339,6 +359,25 @@ CREATE INDEX IF NOT EXISTS idx_splits_expense ON expense_splits(expense_id);
 CREATE INDEX IF NOT EXISTS idx_splits_friend ON expense_splits(friend_id);
 CREATE INDEX IF NOT EXISTS idx_splits_settled ON expense_splits(is_settled);
 
+-- Subscriptions table for recurring payments
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    name TEXT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    billing_cycle TEXT NOT NULL,
+    next_renewal DATE NOT NULL,
+    category TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    reminder_days INTEGER DEFAULT 3,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_next_renewal ON subscriptions(next_renewal);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_is_active ON subscriptions(is_active);
+
 -- Users table for authentication
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -365,6 +404,11 @@ CATEGORIES_DATA = [
     ("Personal Care", "💇", "#f97316", '["salon", "spa", "gym", "fitness", "haircut", "beauty"]', "Personal grooming and fitness"),
     ("Travel", "✈️", "#14b8a6", '["hotel", "flight", "airbnb", "vacation", "trip", "booking"]', "Travel and accommodation"),
     ("Savings & Investments", "💰", "#22c55e", '["savings", "investment", "stock", "crypto", "deposit"]', "Savings and investment transfers"),
+    # College-specific categories
+    ("Textbooks & Supplies", "📖", "#a855f7", '["textbook", "notebook", "stationery", "backpack", "lab equipment", "calculator", "binder"]', "Academic books and school supplies"),
+    ("Tuition & Fees", "🎓", "#0ea5e9", '["tuition", "enrollment", "registration", "exam fee", "transcript", "application fee", "semester fee"]', "University tuition and academic fees"),
+    ("Campus Food", "🍕", "#fb923c", '["cafeteria", "dining hall", "meal plan", "campus restaurant", "student center", "food court"]', "On-campus dining and meal plans"),
+    ("Study Tools", "💻", "#8b5cf6", '["chegg", "quizlet", "grammarly", "notion", "canva", "chatgpt", "turnitin", "mathway"]', "Digital tools and subscriptions for studying"),
     ("Other", "📌", "#6b7280", '[]', "Miscellaneous expenses"),
 ]
 

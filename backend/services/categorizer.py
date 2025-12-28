@@ -130,69 +130,96 @@ class ExpenseCategorizer:
     """
     
     # Category patterns - comprehensive keywords for accurate matching
+    # NOTE: Order matters! More specific categories (like college ones) should come before generic ones
     CATEGORY_PATTERNS = {
+        # College-specific categories - check these FIRST before general Shopping
+        "Textbooks & Supplies": [
+            r"\b(textbook|text book|coursebook|course book|required reading|class book)\\b",
+            r"\b(notebook|notepad|binder|folder|stationery|pen|pencil|highlighter|marker)\\b",
+            r"\b(backpack|school bag|laptop bag|book bag|lab coat|lab equipment|calculator|scientific calculator)\\b",
+            r"\b(index cards|flash cards|sticky notes|planner|academic planner)\\b",
+        ],
+        "Tuition & Fees": [
+            r"\b(tuition|school fees|university fees|college fees|semester fee|academic fee)\\b",
+            r"\b(enrollment|enrolment|registration fee|matriculation|admission fee)\\b",
+            r"\b(exam fee|examination fee|transcript|degree fee|graduation fee|convocation)\\b",
+            r"\b(application fee|college application|lab fee|library fee|student fee)\\b",
+        ],
+        "Campus Food": [
+            r"\b(cafeteria|canteen|dining hall|mess|meal plan|food plan)\\b",
+            r"\b(campus restaurant|campus cafe|student center food|food court campus)\\b",
+            r"\b(flex dollars|dining dollars|meal swipe|meal credits)\\b",
+        ],
+        "Study Tools": [
+            r"\b(chegg|quizlet|coursehero|course hero|studyblue|brainly)\\b",
+            r"\b(grammarly|turnitin|plagiarism check|citation tool|easybib)\\b",
+            r"\b(notion|evernote|onenote|google docs|microsoft 365 student)\\b",
+            r"\b(canva|adobe student|figma|sketch|creative cloud)\\b",
+            r"\b(chatgpt|claude|ai tutor|wolfram|mathway|symbolab|photomath)\\b",
+            r"\b(zoom|teams|google meet|lecture recording|course materials)\\b",
+        ],
+        # General categories
         "Food & Dining": [
-            r"\b(restaurant|food|lunch|dinner|breakfast|brunch|cafe|coffee|tea|pizza|burger|chicken|rice|meal|eat|dining|snack|takeout|takeaway|delivery|order)\b",
-            r"\b(grocery|supermarket|shoprite|melcom|maxmart|market|provisions|foodstuff)\b",
-            r"\b(waakye|jollof|kenkey|banku|fufu|kelewele|gari|shito|tilapia|kontomire|red red|fried rice|indomie|bread|egg)\b",
-            r"\b(mcdonald|kfc|subway|starbucks|dominos|papaye|marwako|nandos|chicken inn)\b",
-            r"\b(drinks|juice|soda|beer|wine|alcohol|bar tab|snacks|biscuits|cookies|ice cream|fruit)\b",
+            r"\b(restaurant|food|lunch|dinner|breakfast|brunch|cafe|coffee|tea|pizza|burger|chicken|rice|meal|eat|dining|snack|takeout|takeaway|delivery|order)\\b",
+            r"\b(grocery|supermarket|shoprite|melcom|maxmart|market|provisions|foodstuff)\\b",
+            r"\b(waakye|jollof|kenkey|banku|fufu|kelewele|gari|shito|tilapia|kontomire|red red|fried rice|indomie|bread|egg)\\b",
+            r"\b(mcdonald|kfc|subway|starbucks|dominos|papaye|marwako|nandos|chicken inn)\\b",
+            r"\b(drinks|juice|soda|beer|wine|alcohol|bar tab|snacks|biscuits|cookies|ice cream|fruit)\\b",
         ],
         "Transportation": [
-            r"\b(uber|bolt|yango|taxi|cab|ride|driver|trotro|bus|train|metro|okada|aboboyaa)\b",
-            r"\b(fuel|gas|petrol|diesel|filling station|shell|goil|total|oando|oryx)\b",
-            r"\b(parking|toll|car wash|mechanic|repair|tyre|tire|oil change|service|maintenance)\b",
-            r"\b(flight|airline|ticket|transport|commute|travel fare)\b",
+            r"\b(uber|bolt|yango|taxi|cab|ride|driver|trotro|bus|train|metro|okada|aboboyaa)\\b",
+            r"\b(fuel|gas|petrol|diesel|filling station|shell|goil|total|oando|oryx)\\b",
+            r"\b(parking|toll|car wash|mechanic|repair|tyre|tire|oil change|service|maintenance)\\b",
+            r"\b(flight|airline|ticket|transport|commute|travel fare)\\b",
         ],
         "Shopping": [
-            r"\b(shop|shopping|store|mall|boutique|market|purchase|buy|bought)\b",
-            r"\b(clothing|clothes|shirt|trouser|dress|jeans|shoes|sneakers|sandals|bag|handbag)\b",
-            r"\b(electronics|phone|laptop|computer|tablet|charger|headphones|earbuds|accessory|gadget)\b",
-            r"\b(amazon|melcom|palace|junction|accra mall|achimota mall|marina mall|west hills)\b",
-            r"\b(furniture|home|kitchen|appliance|decor|bedding|mattress|chair|table)\b",
+            r"\b(shop|shopping|store|mall|boutique|purchase)\\b",
+            r"\b(clothing|clothes|shirt|trouser|dress|jeans|shoes|sneakers|sandals|bag|handbag)\\b",
+            r"\b(electronics|phone|laptop|computer|tablet|charger|headphones|earbuds|accessory|gadget)\\b",
+            r"\b(amazon|melcom|palace|junction|accra mall|achimota mall|marina mall|west hills)\\b",
+            r"\b(furniture|home|kitchen|appliance|decor|bedding|mattress|chair|table)\\b",
         ],
         "Entertainment": [
-            r"\b(movie|cinema|film|netflix|showmax|dstv|gotv|subscription|streaming)\b",
-            r"\b(game|gaming|ps5|playstation|xbox|steam|bet|betting|lotto|lottery)\b",
-            r"\b(concert|show|event|club|lounge|bar|nightclub|party|birthday|celebration)\b",
-            r"\b(spotify|apple music|youtube|tiktok|premium|membership)\b",
-            r"\b(fun|outing|hangout|leisure|recreation|picnic)\b",
+            r"\b(movie|cinema|film|netflix|showmax|dstv|gotv|subscription|streaming)\\b",
+            r"\b(game|gaming|ps5|playstation|xbox|steam|bet|betting|lotto|lottery)\\b",
+            r"\b(concert|show|event|club|lounge|bar|nightclub|party|birthday|celebration)\\b",
+            r"\b(spotify|apple music|youtube|tiktok|premium|membership)\\b",
+            r"\b(fun|outing|hangout|leisure|recreation|picnic)\\b",
         ],
         "Bills & Utilities": [
-            r"\b(bill|utility|electricity|electric|power|ecg|prepaid|postpaid|light)\b",
-            r"\b(water|gwc|internet|wifi|data|bundle|mtn|vodafone|airtel|glo|at)\b",
-            r"\b(phone|mobile|airtime|credit|rent|lease|apartment|house)\b",
-            r"\b(insurance|premium|subscription|mortgage|property tax|waste|sanitation)\b",
-            r"\b(cable|tv|dstv|gotv|startimes|decoder)\b",
+            r"\b(bill|utility|electricity|electric|power|ecg|prepaid|postpaid|light)\\b",
+            r"\b(water|gwc|internet|wifi|data|bundle|mtn|vodafone|airtel|glo|at)\\b",
+            r"\b(phone|mobile|airtime|credit|rent|lease|apartment|house)\\b",
+            r"\b(insurance|premium|subscription|mortgage|property tax|waste|sanitation)\\b",
+            r"\b(cable|tv|dstv|gotv|startimes|decoder)\\b",
         ],
         "Healthcare": [
-            r"\b(doctor|hospital|clinic|pharmacy|medicine|drug|prescription|health|medical)\b",
-            r"\b(dental|dentist|teeth|eye|glasses|optician|checkup|test|lab|laboratory|scan)\b",
-            r"\b(nhis|insurance|consultation|treatment|surgery|procedure|therapy|physio)\b",
-            r"\b(vitamin|supplement|painkiller|paracetamol|ibuprofen|first aid)\b",
+            r"\b(doctor|hospital|clinic|pharmacy|medicine|drug|prescription|health|medical)\\b",
+            r"\b(dental|dentist|teeth|eye|glasses|optician|checkup|test|lab|laboratory|scan)\\b",
+            r"\b(nhis|insurance|consultation|treatment|surgery|procedure|therapy|physio)\\b",
+            r"\b(vitamin|supplement|painkiller|paracetamol|ibuprofen|first aid)\\b",
         ],
         "Education": [
-            r"\b(school|tuition|fees|course|class|lesson|training|workshop|seminar|conference)\b",
-            r"\b(book|textbook|stationery|notebook|pen|pencil|supplies|materials)\b",
-            r"\b(university|college|polytechnic|diploma|degree|certificate|exam|test|quiz)\b",
-            r"\b(online course|udemy|coursera|skillshare|masterclass|tutorial|learning)\b",
+            r"\b(school|course|class|lesson|training|workshop|seminar|conference)\\b",
+            r"\b(university|college|polytechnic|diploma|degree|certificate|exam|test|quiz)\\b",
+            r"\b(online course|udemy|coursera|skillshare|masterclass|tutorial|learning)\\b",
         ],
         "Personal Care": [
-            r"\b(salon|barber|hair|haircut|braids|weave|wig|nails|manicure|pedicure|makeup|cosmetics)\b",
-            r"\b(spa|massage|facial|skincare|cream|lotion|perfume|cologne|fragrance|deodorant)\b",
-            r"\b(gym|fitness|workout|exercise|yoga|pilates|sports|swimming|membership)\b",
-            r"\b(toiletries|soap|shampoo|toothpaste|brush|razor|shaving|grooming)\b",
+            r"\b(salon|barber|hair|haircut|braids|weave|wig|nails|manicure|pedicure|makeup|cosmetics)\\b",
+            r"\b(spa|massage|facial|skincare|cream|lotion|perfume|cologne|fragrance|deodorant)\\b",
+            r"\b(gym|fitness|workout|exercise|yoga|pilates|sports|swimming|membership)\\b",
+            r"\b(toiletries|soap|shampoo|toothpaste|brush|razor|shaving|grooming)\\b",
         ],
         "Travel": [
-            r"\b(hotel|motel|airbnb|lodge|resort|accommodation|booking|reservation|stay)\b",
-            r"\b(flight|airline|airport|ticket|boarding|passport|visa|travel|trip|vacation|holiday)\b",
-            r"\b(africa world|passion air|emirates|kenya airways|ethiopian|british airways)\b",
-            r"\b(tourism|tour|sightseeing|excursion|adventure|road trip|getaway)\b",
+            r"\b(hotel|motel|airbnb|lodge|resort|accommodation|booking|reservation|stay)\\b",
+            r"\b(flight|airline|airport|ticket|boarding|passport|visa|travel|trip|vacation|holiday)\\b",
+            r"\b(africa world|passion air|emirates|kenya airways|ethiopian|british airways)\\b",
+            r"\b(tourism|tour|sightseeing|excursion|adventure|road trip|getaway)\\b",
         ],
         "Savings & Investments": [
-            r"\b(savings|save|investment|invest|stock|shares|trading|crypto|bitcoin|forex)\b",
-            r"\b(deposit|transfer|momo|mobile money|wallet|susu|contribution|pension)\b",
-            r"\b(bank|banking|interest|dividend|mutual fund|fixed deposit|treasury bill|bond)\b",
+            r"\b(savings|save|investment|invest|stock|shares|trading|crypto|bitcoin|forex)\\b",
+            r"\b(deposit|transfer|momo|mobile money|wallet|susu|contribution|pension)\\b",
+            r"\b(bank|banking|interest|dividend|mutual fund|fixed deposit|treasury bill|bond)\\b",
         ],
     }
     
@@ -253,6 +280,10 @@ Your task is to categorize expense descriptions into one of these categories:
 - Personal Care
 - Travel
 - Savings & Investments
+- Textbooks & Supplies (academic books, notebooks, stationery, calculators)
+- Tuition & Fees (university tuition, enrollment, exam fees, transcripts)
+- Campus Food (cafeteria, dining hall, meal plans)
+- Study Tools (Chegg, Quizlet, Grammarly, Notion, ChatGPT subscriptions)
 - Other
 
 Respond with JSON in this format:

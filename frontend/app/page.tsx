@@ -5,6 +5,8 @@ import AppLayout from '@/components/AppLayout';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
 import AlertsDropdown from '@/components/AlertsDropdown';
+import SafeToSpendCard from '@/components/SafeToSpendCard';
+import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { Plus, X, Zap, ClipboardList, Shield } from 'lucide-react';
 
 export default function Home() {
@@ -45,6 +47,10 @@ export default function Home() {
               />
             </div>
           )}
+
+          {/* Summary Cards */}
+          <SafeToSpendCard />
+          <WeeklySummaryCard />
 
           {/* Quick Stats */}
           <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">

@@ -15,6 +15,7 @@ from models import (
     SpendingTrend,
     AnalyticsSummary,
     BudgetStatus,
+    SafeToSpendResponse,
 )
 from dependencies import get_current_user
 
@@ -287,3 +288,192 @@ async def get_budget_status(
         ))
     
     return results
+
+
+@router.get("/safe-to-spend", response_model=SafeToSpendResponse)
+async def get_safe_to_spend(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Calculate the safe amount to spend today.
+    
+    Formula: (Total Budget - Spent This Month - Goals Reserved) / Days Remaining
+    """
+    today = date.today()
+    year = today.year
+    month = today.month
+    
+    # Calculate date range for current month
+    start_date = date(year, month, 1)
+    if month == 12:
+        end_date = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        end_date = date(year, month + 1, 1) - timedelta(days=1)
+    
+    days_remaining = max((end_date - today).days + 1, 1)  # At least 1 day
+    
+    user_filter, user_params = build_user_filter(user)
+    
+    # Get total monthly budget
+    cursor = await db.execute("SELECT COALESCE(SUM(monthly_limit), 0) as total FROM budgets")
+    row = await cursor.fetchone()
+    total_budget = float(row["total"]) if row else 0.0
+    
+    # Get total spent this month
+    cursor = await db.execute(
+        f"""
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM expenses
+        WHERE date >= ? AND date <= ? AND {user_filter}
+        """,
+        (start_date, end_date, *user_params)
+    )
+    row = await cursor.fetchone()
+    spent_this_month = float(row["total"]) if row else 0.0
+    
+    # Get goals that need contributions this month (active goals with target dates)
+    # Calculate monthly contribution needed: (target - current) / months until target
+    cursor = await db.execute(
+        """
+        SELECT 
+            target_amount,
+            current_amount,
+            target_date
+        FROM savings_goals
+        WHERE is_completed = 0 AND target_date IS NOT NULL
+        """
+    )
+    goals_rows = await cursor.fetchall()
+    
+    goals_reserved = 0.0
+    for goal in goals_rows:
+        target = float(goal["target_amount"])
+        current = float(goal["current_amount"])
+        remaining_to_save = target - current
+        
+        if remaining_to_save > 0 and goal["target_date"]:
+            # Convert target_date to date object if it's a string
+            target_date = goal["target_date"]
+            if isinstance(target_date, str):
+                target_date = datetime.strptime(target_date, "%Y-%m-%d").date()
+            
+            # Calculate months until target
+            months_until = ((target_date.year - today.year) * 12 + 
+                           (target_date.month - today.month))
+            months_until = max(months_until, 1)
+            
+            # Monthly contribution needed
+            monthly_contribution = remaining_to_save / months_until
+            goals_reserved += monthly_contribution
+    
+    # Calculate remaining budget and safe to spend
+    remaining_budget = total_budget - spent_this_month
+    disposable = remaining_budget - goals_reserved
+    safe_to_spend_today = max(disposable / days_remaining, 0)
+    
+    # Determine status
+    if total_budget == 0:
+        status = "no_budget"
+    elif disposable < 0:
+        status = "danger"
+    elif (spent_this_month / total_budget * 100) > 80 if total_budget > 0 else False:
+        status = "caution"
+    else:
+        status = "healthy"
+    
+    return SafeToSpendResponse(
+        safe_to_spend_today=round(safe_to_spend_today, 2),
+        total_budget=round(total_budget, 2),
+        spent_this_month=round(spent_this_month, 2),
+        goals_reserved=round(goals_reserved, 2),
+        remaining_budget=round(remaining_budget, 2),
+        days_remaining=days_remaining,
+        status=status
+    )
+
+
+@router.get("/weekly-summary")
+async def get_weekly_summary(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Get spending summary for this week vs last week.
+    Week starts on Monday.
+    """
+    today = date.today()
+    
+    # Calculate this week's date range (Monday to Sunday)
+    days_since_monday = today.weekday()
+    this_week_start = today - timedelta(days=days_since_monday)
+    this_week_end = today
+    
+    # Calculate last week's date range
+    last_week_start = this_week_start - timedelta(days=7)
+    last_week_end = this_week_start - timedelta(days=1)
+    
+    user_filter, user_params = build_user_filter(user)
+    
+    # Get this week's spending
+    cursor = await db.execute(
+        f"""
+        SELECT 
+            COALESCE(SUM(amount), 0) as total,
+            COUNT(*) as count
+        FROM expenses
+        WHERE date >= ? AND date <= ? AND {user_filter}
+        """,
+        (this_week_start, this_week_end, *user_params)
+    )
+    this_week = await cursor.fetchone()
+    this_week_total = float(this_week["total"]) if this_week else 0.0
+    this_week_count = this_week["count"] if this_week else 0
+    
+    # Get last week's spending
+    cursor = await db.execute(
+        f"""
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM expenses
+        WHERE date >= ? AND date <= ? AND {user_filter}
+        """,
+        (last_week_start, last_week_end, *user_params)
+    )
+    last_week = await cursor.fetchone()
+    last_week_total = float(last_week["total"]) if last_week else 0.0
+    
+    # Get top category this week
+    cursor = await db.execute(
+        f"""
+        SELECT category, SUM(amount) as total
+        FROM expenses
+        WHERE date >= ? AND date <= ? AND {user_filter}
+        GROUP BY category
+        ORDER BY total DESC
+        LIMIT 1
+        """,
+        (this_week_start, this_week_end, *user_params)
+    )
+    top_cat = await cursor.fetchone()
+    top_category = top_cat["category"] if top_cat else None
+    top_category_amount = float(top_cat["total"]) if top_cat else 0.0
+    
+    # Calculate week-over-week change
+    if last_week_total > 0:
+        change_percent = ((this_week_total - last_week_total) / last_week_total) * 100
+    else:
+        change_percent = 100 if this_week_total > 0 else 0
+    
+    return {
+        "this_week_total": round(this_week_total, 2),
+        "this_week_count": this_week_count,
+        "last_week_total": round(last_week_total, 2),
+        "change_percent": round(change_percent, 1),
+        "top_category": top_category,
+        "top_category_amount": round(top_category_amount, 2),
+        "week_start": str(this_week_start),
+        "week_end": str(this_week_end),
+        "days_into_week": days_since_monday + 1
+    }
+
+

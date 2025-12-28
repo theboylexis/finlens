@@ -9,6 +9,7 @@ import {
     BarChart3,
     Target,
     Users,
+    CreditCard,
     LogOut,
     Wallet,
     Menu,
@@ -19,6 +20,7 @@ const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Goals', href: '/goals', icon: Target },
+    { name: 'Subscriptions', href: '/subscriptions', icon: CreditCard },
     { name: 'Split Bills', href: '/splits', icon: Users },
 ];
 
@@ -47,7 +49,7 @@ export default function Sidebar() {
 
             {/* Mobile Menu Overlay */}
             {mobileMenuOpen && (
-                <div 
+                <div
                     className="lg:hidden fixed inset-0 bg-black/50 z-40"
                     onClick={closeMobileMenu}
                 />
@@ -80,8 +82,8 @@ export default function Sidebar() {
                                         href={item.href}
                                         onClick={closeMobileMenu}
                                         className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                                                ? 'bg-[#262626] text-white'
-                                                : 'text-[#a1a1aa] hover:text-white hover:bg-[#1a1a1a]'
+                                            ? 'bg-[#262626] text-white'
+                                            : 'text-[#a1a1aa] hover:text-white hover:bg-[#1a1a1a]'
                                             }`}
                                     >
                                         <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : ''}`} />
@@ -113,8 +115,8 @@ export default function Sidebar() {
                             </button>
                         </div>
                     ) : (
-                        <Link 
-                            href="/login" 
+                        <Link
+                            href="/login"
                             onClick={closeMobileMenu}
                             className="block text-center py-2 text-sm text-emerald-400 hover:text-emerald-300"
                         >
