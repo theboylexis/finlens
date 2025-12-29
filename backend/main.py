@@ -274,6 +274,59 @@ async def debug_list_budgets():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+@app.get("/debug/test-food-budget")
+async def debug_test_food_budget():
+    """Debug endpoint to test creating a Food & Dining budget for user 21."""
+    try:
+        async with db.get_connection() as conn:
+            test_user_id = 21  # testuser@example.com
+            category = "Food & Dining"
+            limit = 500.0
+            
+            # Check if exists
+            check_cursor = await conn.execute(
+                "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+                (category, test_user_id)
+            )
+            existing = await check_cursor.fetchone()
+            
+            if existing:
+                return {
+                    "success": False, 
+                    "reason": "already_exists",
+                    "existing_id": existing["id"] if hasattr(existing, 'keys') else str(existing)
+                }
+            
+            # Try insert
+            cursor = await conn.execute(
+                """
+                INSERT INTO budgets (user_id, category, monthly_limit)
+                VALUES (?, ?, ?)
+                """,
+                (test_user_id, category, limit)
+            )
+            await conn.commit()
+            
+            # Try to fetch it
+            fetch_cursor = await conn.execute(
+                "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
+                (category, test_user_id)
+            )
+            row = await fetch_cursor.fetchone()
+            
+            if row:
+                return {
+                    "success": True,
+                    "budget": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
+                }
+            else:
+                return {"success": False, "reason": "not_found_after_insert"}
+                
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
