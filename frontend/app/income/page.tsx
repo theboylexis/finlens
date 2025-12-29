@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
+import AppLayout from '@/components/AppLayout';
 import IncomeModal from '@/components/IncomeModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { fetchIncome, getIncomeSummary, deleteIncome, Income, IncomeSummary } from '@/lib/api';
-import { Plus, Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, Trash2, LucideIcon } from 'lucide-react';
+import { Plus, Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, Trash2, TrendingUp, LucideIcon } from 'lucide-react';
 
 const INCOME_ICONS: Record<string, LucideIcon> = {
     'Job': Briefcase,
@@ -32,7 +32,7 @@ export default function IncomePage() {
         try {
             setLoading(true);
             const [incomesData, summaryData] = await Promise.all([
-                fetchIncome(undefined, undefined, 100), // Fetch last 100
+                fetchIncome(undefined, undefined, 100),
                 getIncomeSummary()
             ]);
             setIncomes(incomesData);
@@ -59,103 +59,90 @@ export default function IncomePage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-black font-sans">
-            <Sidebar />
-
-            <main className="flex-1 pt-20 lg:pt-8 px-4 pb-20 max-w-lg mx-auto lg:ml-60">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-white mb-1">Income</h1>
-                        <p className="text-sm text-[#a1a1aa]">Track your earnings</p>
-                    </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-black shadow-lg shadow-emerald-500/20 transition-all"
-                    >
-                        <Plus className="w-6 h-6" />
-                    </button>
+        <AppLayout
+            title="Income"
+            actions={
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-black text-sm font-medium rounded-md transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Income
+                </button>
+            }
+        >
+            {/* Summary Card */}
+            <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-sm font-medium text-[#a1a1aa]">This Month</h2>
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
                 </div>
-
-                {/* Summary Card */}
-                <div className="bg-[#171717] border border-[#262626] rounded-xl p-6 mb-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-
-                    <p className="text-sm text-[#a1a1aa] mb-1">Total Income (This Month)</p>
-                    <div className="text-3xl font-bold text-white mb-4">
-                        GH₵ {summary?.total_income.toFixed(2) || '0.00'}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 py-1.5 px-3 rounded-full w-fit">
-                        <span>📈</span>
-                        <span>Keep it up! Save 20% of this if you can.</span>
-                    </div>
+                <div className="text-3xl font-bold text-emerald-400">
+                    GH₵ {summary?.total_income.toFixed(2) || '0.00'}
                 </div>
+            </div>
 
-                {/* History List */}
-                <h3 className="text-sm font-medium text-[#a1a1aa] mb-4 uppercase tracking-wider text-xs">History</h3>
+            {/* History List */}
+            <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">
+                <h3 className="text-sm font-medium text-white mb-4">History</h3>
 
                 {loading ? (
                     <div className="space-y-3">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-16 bg-[#171717] rounded-lg animate-pulse" />
+                            <div key={i} className="h-14 bg-[#0f0f0f] rounded-md animate-pulse" />
                         ))}
                     </div>
                 ) : incomes.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-[#171717] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                            💸
-                        </div>
-                        <p className="text-[#a1a1aa] text-sm">No income records found.</p>
+                    <div className="text-center py-8">
+                        <Wallet className="w-10 h-10 text-[#52525b] mx-auto mb-2" />
+                        <p className="text-sm text-[#52525b] mb-2">No income records yet</p>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="text-emerald-500 text-sm font-medium mt-2 hover:underline"
+                            className="text-emerald-400 text-sm font-medium hover:underline"
                         >
-                            Log your first paycheck
+                            Log your first income
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {incomes.map((income) => (
-                            <div key={income.id} className="bg-[#171717] border border-[#262626] rounded-xl p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <div key={income.id} className="flex items-center justify-between p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
                                         {(() => {
                                             const IconComponent = INCOME_ICONS[income.category] || Wallet;
-                                            return <IconComponent className="w-5 h-5 text-emerald-400" />;
+                                            return <IconComponent className="w-4 h-4 text-emerald-400" />;
                                         })()}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">{income.source}</p>
-                                        <p className="text-xs text-[#a1a1aa]">{new Date(income.date).toLocaleDateString()}</p>
+                                        <p className="text-sm font-medium text-white">{income.source}</p>
+                                        <p className="text-xs text-[#52525b]">{new Date(income.date).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                        <p className="text-emerald-400 font-medium">+GH₵{income.amount.toFixed(2)}</p>
+                                        <p className="text-sm font-semibold text-emerald-400">+GH₵{income.amount.toFixed(2)}</p>
                                         <p className="text-xs text-[#52525b]">{income.category}</p>
                                     </div>
                                     <button
                                         onClick={() => setDeleteId(income.id)}
-                                        className="text-[#52525b] hover:text-red-400 transition-colors p-1"
+                                        className="p-1 text-[#52525b] hover:text-red-400 transition-colors"
                                         title="Delete income"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
-            </main>
+            </div>
 
             {isModalOpen && (
                 <IncomeModal
                     onClose={() => setIsModalOpen(false)}
                     onSuccess={() => {
                         loadData();
-                        // Optional: Keep modal open or close it? Close it for now.
-                        // setIsModalOpen(false); 
                     }}
                 />
             )}
@@ -171,6 +158,6 @@ export default function IncomePage() {
                 confirmText="Delete"
                 type="danger"
             />
-        </div>
+        </AppLayout>
     );
 }
