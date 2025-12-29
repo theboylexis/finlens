@@ -139,13 +139,14 @@ async def get_balances(db: aiosqlite.Connection = Depends(get_db)):
             f.name as friend_name,
             f.email as friend_email,
             f.avatar_color,
-            COALESCE(SUM(CASE WHEN es.is_settled = FALSE THEN es.amount ELSE 0 END), 0) as total_owed,
-            COUNT(CASE WHEN es.is_settled = FALSE THEN 1 END) as unsettled_count
+            COALESCE(SUM(CASE WHEN es.is_settled = false THEN es.amount ELSE 0 END), 0) as total_owed,
+            COUNT(CASE WHEN es.is_settled = false THEN 1 END) as unsettled_count
         FROM friends f
         LEFT JOIN expense_splits es ON f.id = es.friend_id
         GROUP BY f.id, f.name, f.email, f.avatar_color
-        HAVING unsettled_count > 0 OR total_owed > 0
-        ORDER BY total_owed DESC
+        HAVING COUNT(CASE WHEN es.is_settled = false THEN 1 END) > 0 
+            OR COALESCE(SUM(CASE WHEN es.is_settled = false THEN es.amount ELSE 0 END), 0) > 0
+        ORDER BY COALESCE(SUM(CASE WHEN es.is_settled = false THEN es.amount ELSE 0 END), 0) DESC
         """
     )
     rows = await cursor.fetchall()
@@ -183,7 +184,7 @@ async def settle_split(
     await db.execute(
         """
         UPDATE expense_splits 
-        SET is_settled = TRUE, settled_at = CURRENT_TIMESTAMP
+        SET is_settled = true, settled_at = CURRENT_TIMESTAMP
         WHERE id = ?
         """,
         (split_id,)
@@ -206,8 +207,8 @@ async def settle_all_with_friend(
     result = await db.execute(
         """
         UPDATE expense_splits 
-        SET is_settled = TRUE, settled_at = CURRENT_TIMESTAMP
-        WHERE friend_id = ? AND is_settled = FALSE
+        SET is_settled = true, settled_at = CURRENT_TIMESTAMP
+        WHERE friend_id = ? AND is_settled = false
         """,
         (friend_id,)
     )
