@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
-import { getSafeToSpend, getIncomeSummary, SafeToSpend } from '@/lib/api';
-import { Wallet, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { getSafeToSpend, getIncomeSummary, SafeToSpend, CategoryBudgetStatus } from '@/lib/api';
+import { Wallet, TrendingUp, TrendingDown, AlertCircle, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 interface SafeToSpendCardProps {
     refreshTrigger?: number;
@@ -14,6 +14,7 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
     const [income, setIncome] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showBudgetDetails, setShowBudgetDetails] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -52,6 +53,23 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
         }
     };
 
+    const renderCategoryStatus = (cat: CategoryBudgetStatus) => {
+        const isExceeded = cat.status === 'exceeded';
+        return (
+            <div key={cat.category} className={`flex justify-between items-center py-1 px-2 rounded ${isExceeded ? 'bg-red-500/10' : 'bg-amber-500/10'}`}>
+                <span className="text-xs text-[#a1a1aa]">{cat.category}</span>
+                <div className="text-right">
+                    <span className={`text-xs font-medium ${isExceeded ? 'text-red-400' : 'text-amber-400'}`}>
+                        {cat.percentage_used.toFixed(0)}%
+                    </span>
+                    <span className="text-xs text-[#52525b] ml-2">
+                        GHS {cat.spent.toFixed(0)} / {cat.limit.toFixed(0)}
+                    </span>
+                </div>
+            </div>
+        );
+    };
+
     const config = getStatusConfig();
     const Icon = config.icon;
 
@@ -63,6 +81,9 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
             </div>
         );
     }
+
+    const hasWarnings = data?.has_budget_warnings;
+    const totalWarnings = (data?.categories_over_budget?.length || 0) + (data?.categories_near_limit?.length || 0);
 
     return (
         <div className={`${config.bg} border border-[#262626] rounded-lg p-4`}>
@@ -108,13 +129,37 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
                                 <span className="text-[#a1a1aa]">{data.days_remaining}</span>
                             </div>
                         </div>
-                        {income !== null && (
-                            <div className="mt-2 text-xs text-[#a1a1aa]">
-                                {/* Optionally show what it would be if based on income */}
-                                <span className="font-semibold">If based on income:</span> GHS {(income - data.spent_this_month).toFixed(2)}
+
+                        {/* Budget Warnings Section */}
+                        {hasWarnings && (
+                            <div className="mt-3 pt-3 border-t border-[#262626]">
+                                <button
+                                    onClick={() => setShowBudgetDetails(!showBudgetDetails)}
+                                    className="flex items-center justify-between w-full text-left"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                                        <span className="text-xs font-medium text-amber-400">
+                                            {totalWarnings} budget{totalWarnings > 1 ? 's' : ''} need attention
+                                        </span>
+                                    </div>
+                                    {showBudgetDetails ? (
+                                        <ChevronUp className="w-4 h-4 text-[#52525b]" />
+                                    ) : (
+                                        <ChevronDown className="w-4 h-4 text-[#52525b]" />
+                                    )}
+                                </button>
+
+                                {showBudgetDetails && (
+                                    <div className="mt-2 space-y-1">
+                                        {data.categories_over_budget?.map(renderCategoryStatus)}
+                                        {data.categories_near_limit?.map(renderCategoryStatus)}
+                                    </div>
+                                )}
                             </div>
                         )}
-                        {data.status === 'danger' && (
+
+                        {data.status === 'danger' && !hasWarnings && (
                             <p className="mt-3 text-xs text-red-400">
                                 ⚠️ You've exceeded your budget for this month
                             </p>

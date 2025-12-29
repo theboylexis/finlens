@@ -300,7 +300,10 @@ async def get_safe_to_spend(
     Calculate the safe amount to spend today.
     
     Formula: (Total Budget - Spent This Month - Goals Reserved) / Days Remaining
+    Also tracks budget limits per category.
     """
+    from models import CategoryBudgetStatus
+    
     today = date.today()
     year = today.year
     month = today.month
@@ -376,17 +379,73 @@ async def get_safe_to_spend(
             monthly_contribution = remaining_to_save / months_until
             goals_reserved += monthly_contribution
     
+    # === NEW: Budget tracking per category ===
+    # Get all budgets with their spending for this month
+    cursor = await db.execute(
+        """
+        SELECT 
+            b.category,
+            b.monthly_limit,
+            COALESCE(SUM(e.amount), 0) as spent
+        FROM budgets b
+        LEFT JOIN expenses e ON b.category = e.category 
+            AND e.date >= ? AND e.date <= ? AND e.user_id = ?
+        WHERE b.user_id = ?
+        GROUP BY b.category, b.monthly_limit
+        """,
+        (start_date, end_date, user["id"], user["id"])
+    )
+    budget_rows = await cursor.fetchall()
+    
+    categories_over_budget = []
+    categories_near_limit = []
+    total_budget_limit = 0.0
+    
+    for row in budget_rows:
+        limit = float(row["monthly_limit"])
+        spent = float(row["spent"])
+        remaining = limit - spent
+        percentage_used = (spent / limit * 100) if limit > 0 else 0
+        
+        total_budget_limit += limit
+        
+        # Determine status
+        if spent > limit:
+            status = "exceeded"
+        elif percentage_used >= 80:
+            status = "warning"
+        else:
+            status = "safe"
+        
+        category_status = CategoryBudgetStatus(
+            category=row["category"],
+            limit=round(limit, 2),
+            spent=round(spent, 2),
+            remaining=round(remaining, 2),
+            percentage_used=round(percentage_used, 1),
+            status=status
+        )
+        
+        if status == "exceeded":
+            categories_over_budget.append(category_status)
+        elif status == "warning":
+            categories_near_limit.append(category_status)
+    
+    has_budget_warnings = len(categories_over_budget) > 0 or len(categories_near_limit) > 0
+    
     # Calculate remaining income and safe to spend
     remaining_income = total_income - spent_this_month
     disposable = remaining_income - goals_reserved
     safe_to_spend_today = max(disposable / days_remaining, 0)
     
-    # Determine status
+    # Determine overall status (factor in budget warnings)
     if total_income == 0:
         status = "no_income"
+    elif len(categories_over_budget) > 0:
+        status = "danger"
     elif disposable < 0:
         status = "danger"
-    elif (spent_this_month / total_income * 100) > 80 if total_income > 0 else False:
+    elif len(categories_near_limit) > 0 or (spent_this_month / total_income * 100) > 80 if total_income > 0 else False:
         status = "caution"
     else:
         status = "healthy"
@@ -398,8 +457,13 @@ async def get_safe_to_spend(
         goals_reserved=round(goals_reserved, 2),
         remaining_budget=round(remaining_income, 2),  # Renamed field still returns remaining income
         days_remaining=days_remaining,
-        status=status
+        status=status,
+        categories_over_budget=categories_over_budget,
+        categories_near_limit=categories_near_limit,
+        total_budget_limit=round(total_budget_limit, 2),
+        has_budget_warnings=has_budget_warnings
     )
+
 
 
 @router.get("/weekly-summary")

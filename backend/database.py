@@ -462,7 +462,7 @@ CATEGORIES_DATA = [
 
 
 class PostgresRowProxy:
-    """Wrapper to make asyncpg Record behave like aiosqlite Row."""
+    """Wrapper to make asyncpg Record behave like aiosqlite Row.""7"
     def __init__(self, record: 'asyncpg.Record'):
         self._record = record
         self._keys = list(record.keys()) if record else []

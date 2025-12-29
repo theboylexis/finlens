@@ -111,6 +111,15 @@ export async function deleteExpense(id: number): Promise<void> {
 }
 
 // Safe to Spend API
+export interface CategoryBudgetStatus {
+  category: string;
+  limit: number;
+  spent: number;
+  remaining: number;
+  percentage_used: number;
+  status: 'safe' | 'warning' | 'exceeded';
+}
+
 export interface SafeToSpend {
   safe_to_spend_today: number;
   total_budget: number;
@@ -119,6 +128,11 @@ export interface SafeToSpend {
   remaining_budget: number;
   days_remaining: number;
   status: 'healthy' | 'caution' | 'danger' | 'no_budget' | 'no_income';
+  // Budget tracking fields
+  categories_over_budget: CategoryBudgetStatus[];
+  categories_near_limit: CategoryBudgetStatus[];
+  total_budget_limit: number;
+  has_budget_warnings: boolean;
 }
 
 export async function getSafeToSpend(): Promise<SafeToSpend> {

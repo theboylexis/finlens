@@ -229,6 +229,16 @@ class AnalyticsSummary(BaseModel):
     date_range_end: DateType
 
 
+class CategoryBudgetStatus(BaseModel):
+    """Budget status for a specific category."""
+    category: str
+    limit: float
+    spent: float
+    remaining: float
+    percentage_used: float
+    status: str  # 'safe', 'warning', 'exceeded'
+
+
 class SafeToSpendResponse(BaseModel):
     """Safe to spend calculation response."""
     safe_to_spend_today: float = Field(..., description="Amount safe to spend today")
@@ -238,6 +248,11 @@ class SafeToSpendResponse(BaseModel):
     remaining_budget: float = Field(..., description="Budget remaining after spending")
     days_remaining: int = Field(..., description="Days remaining in the month")
     status: str = Field(..., description="Status: 'healthy', 'caution', or 'danger'")
+    # Budget tracking fields
+    categories_over_budget: List[CategoryBudgetStatus] = Field(default_factory=list, description="Categories exceeding their limits")
+    categories_near_limit: List[CategoryBudgetStatus] = Field(default_factory=list, description="Categories at 80%+ usage")
+    total_budget_limit: float = Field(default=0.0, description="Sum of all budget limits")
+    has_budget_warnings: bool = Field(default=False, description="True if any category is near or over limit")
 
 
 # ============================================================================
