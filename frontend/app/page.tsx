@@ -88,7 +88,10 @@ export default function Home() {
               <h2 className="text-sm font-medium text-white">Recent Expenses</h2>
               <span className="text-xs text-[#52525b]">GHS</span>
             </div>
-            <ExpenseList refreshTrigger={refreshTrigger} />
+            <ExpenseList
+              refreshTrigger={refreshTrigger}
+              onDeleteSuccess={handleExpenseAdded}
+            />
           </div>
         </div>
       </div>

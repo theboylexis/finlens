@@ -22,9 +22,10 @@ interface Expense {
 
 interface ExpenseListProps {
     refreshTrigger?: number;
+    onDeleteSuccess?: () => void;
 }
 
-export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
+export default function ExpenseList({ refreshTrigger, onDeleteSuccess }: ExpenseListProps) {
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
             if (!response.ok) throw new Error('Failed to delete');
             loadExpenses();
             setDeleteId(null);
+            if (onDeleteSuccess) onDeleteSuccess();
         } catch (err) {
             console.error('Error deleting expense:', err);
         } finally {
@@ -152,7 +154,11 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
                 <SplitExpenseModal
                     expense={splitExpense}
                     onClose={() => setSplitExpense(null)}
-                    onSuccess={() => { setSplitExpense(null); loadExpenses(); }}
+                    onSuccess={() => {
+                        setSplitExpense(null);
+                        loadExpenses();
+                        if (onDeleteSuccess) onDeleteSuccess();
+                    }}
                 />
             )}
 
