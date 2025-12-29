@@ -108,9 +108,27 @@ export default function IncomePage() {
                                         <p className="text-xs text-[#a1a1aa]">{new Date(income.date).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-emerald-400 font-medium">+GH₵{income.amount.toFixed(2)}</p>
-                                    <p className="text-xs text-[#52525b]">{income.category}</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                        <p className="text-emerald-400 font-medium">+GH₵{income.amount.toFixed(2)}</p>
+                                        <p className="text-xs text-[#52525b]">{income.category}</p>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm('Delete this income?')) return;
+                                            try {
+                                                const { deleteIncome } = await import('@/lib/api');
+                                                await deleteIncome(income.id);
+                                                loadData();
+                                            } catch (e) {
+                                                console.error('Failed to delete:', e);
+                                            }
+                                        }}
+                                        className="text-[#52525b] hover:text-red-400 transition-colors p-1 text-xl"
+                                        title="Delete"
+                                    >
+                                        ×
+                                    </button>
                                 </div>
                             </div>
                         ))}

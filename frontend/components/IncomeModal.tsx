@@ -207,7 +207,7 @@ export default function IncomeModal({ onClose, onSuccess }: IncomeModalProps) {
                                             <span className="font-medium text-emerald-400">+GH₵{inc.amount.toFixed(2)}</span>
                                             <button
                                                 onClick={() => handleDelete(inc.id)}
-                                                className="text-[#52525b] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                                className="text-[#52525b] hover:text-red-400 transition-all p-1"
                                                 title="Delete"
                                             >
                                                 ×
