@@ -579,6 +579,8 @@ class PostgresConnectionWrapper:
         sql = re.sub(r'\bis_dismissed\s*=\s*1\b', 'is_dismissed = TRUE', sql, flags=re.IGNORECASE)
         sql = re.sub(r'\bis_settled\s*=\s*0\b', 'is_settled = FALSE', sql, flags=re.IGNORECASE)
         sql = re.sub(r'\bis_settled\s*=\s*1\b', 'is_settled = TRUE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_recurring\s*=\s*0\b', 'is_recurring = FALSE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bis_recurring\s*=\s*1\b', 'is_recurring = TRUE', sql, flags=re.IGNORECASE)
         
         return sql
     
