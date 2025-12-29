@@ -168,6 +168,51 @@ async def debug_tables():
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 
+@app.get("/debug/test-income")
+async def debug_test_income():
+    """Debug endpoint to test income creation flow."""
+    from datetime import date
+    try:
+        async with db.get_connection() as conn:
+            # Try inserting a test row
+            test_user_id = 1  # Assuming user ID 1 exists
+            cursor = await conn.execute(
+                """
+                INSERT INTO incomes (user_id, amount, source, category, date, is_recurring)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (test_user_id, 99.99, "Debug Test", "Job", date.today(), 0)
+            )
+            await conn.commit()
+            
+            new_id = cursor.lastrowid
+            
+            # Try fetching the row
+            if new_id:
+                fetch_cursor = await conn.execute("SELECT * FROM incomes WHERE id = ?", (new_id,))
+            else:
+                fetch_cursor = await conn.execute(
+                    "SELECT * FROM incomes WHERE user_id = ? ORDER BY id DESC LIMIT 1", 
+                    (test_user_id,)
+                )
+            row = await fetch_cursor.fetchone()
+            
+            if row:
+                # Delete the test row
+                await conn.execute("DELETE FROM incomes WHERE source = 'Debug Test'")
+                await conn.commit()
+                return {
+                    "success": True, 
+                    "new_id": new_id,
+                    "row": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
+                }
+            else:
+                return {"success": False, "error": "Row not found after insert"}
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
