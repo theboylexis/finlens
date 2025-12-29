@@ -837,10 +837,17 @@ class Database:
                             is_recurring BOOLEAN DEFAULT FALSE,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        );
-                        CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
-                        CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id);
+                        )
                     """)
+                    # Create indexes separately (PostgreSQL requires separate statements)
+                    try:
+                        await conn.execute("CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date)")
+                    except Exception:
+                        pass
+                    try:
+                        await conn.execute("CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id)")
+                    except Exception:
+                        pass
                     print("✓ PostgreSQL migration complete for incomes")
             except Exception as e:
                 print(f"Warning during Postgres migration check for incomes: {e}")
