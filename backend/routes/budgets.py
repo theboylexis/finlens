@@ -22,45 +22,59 @@ async def create_budget(
     user: dict = Depends(require_auth)
 ):
     """Create or update a budget for a category for the current user."""
-    # Check if budget already exists for this user/category
-    cursor = await db.execute(
-        "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
-        (budget.category, user["id"])
-    )
-    existing = await cursor.fetchone()
-    
-    if existing:
-        # Update existing budget
-        await db.execute(
-            """
-            UPDATE budgets 
-            SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE category = ? AND user_id = ?
-            """,
-            (budget.monthly_limit, budget.category, user["id"])
-        )
-        budget_id = existing["id"]
-    else:
-        # Create new budget
+    try:
+        # Check if budget already exists for this user/category
         cursor = await db.execute(
-            """
-            INSERT INTO budgets (user_id, category, monthly_limit)
-            VALUES (?, ?, ?)
-            """,
-            (user["id"], budget.category, budget.monthly_limit)
+            "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+            (budget.category, user["id"])
         )
-        budget_id = cursor.lastrowid
-    
-    await db.commit()
-    
-    # Fetch created/updated budget
-    cursor = await db.execute(
-        "SELECT * FROM budgets WHERE id = ?",
-        (budget_id,)
-    )
-    row = await cursor.fetchone()
-    
-    return dict(row)
+        existing = await cursor.fetchone()
+        
+        if existing:
+            # Update existing budget
+            await db.execute(
+                """
+                UPDATE budgets 
+                SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE category = ? AND user_id = ?
+                """,
+                (budget.monthly_limit, budget.category, user["id"])
+            )
+            budget_id = existing["id"]
+        else:
+            # Create new budget
+            cursor = await db.execute(
+                """
+                INSERT INTO budgets (user_id, category, monthly_limit)
+                VALUES (?, ?, ?)
+                """,
+                (user["id"], budget.category, budget.monthly_limit)
+            )
+            budget_id = cursor.lastrowid
+        
+        await db.commit()
+        
+        # Fetch created/updated budget - fallback if lastrowid failed
+        if budget_id:
+            fetch_cursor = await db.execute("SELECT * FROM budgets WHERE id = ?", (budget_id,))
+        else:
+            fetch_cursor = await db.execute(
+                "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
+                (budget.category, user["id"])
+            )
+        row = await fetch_cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=500, detail="Failed to fetch created budget")
+        
+        return dict(row)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Error creating budget: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to create budget: {str(e)}")
 
 
 @router.get("/", response_model=List[BudgetResponse])
