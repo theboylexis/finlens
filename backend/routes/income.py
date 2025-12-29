@@ -74,7 +74,7 @@ async def create_income(
                 income.source,
                 income.category,
                 income.date,
-                1 if income.is_recurring else 0
+                income.is_recurring  # PostgreSQL needs Python boolean, not int
             )
         )
         await db.commit()

@@ -181,7 +181,7 @@ async def debug_test_income():
                 INSERT INTO incomes (user_id, amount, source, category, date, is_recurring)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (test_user_id, 99.99, "Debug Test", "Job", date.today(), 0)
+                (test_user_id, 99.99, "Debug Test", "Job", date.today(), False)
             )
             await conn.commit()
             
