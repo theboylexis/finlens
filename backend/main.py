@@ -257,6 +257,23 @@ async def debug_test_budget():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+@app.get("/debug/list-budgets")
+async def debug_list_budgets():
+    """List all budgets in database."""
+    try:
+        async with db.get_connection() as conn:
+            cursor = await conn.execute("SELECT * FROM budgets ORDER BY id")
+            rows = await cursor.fetchall()
+            return {
+                "success": True, 
+                "count": len(rows),
+                "budgets": [dict(r) if hasattr(r, 'keys') else {"raw": str(r)} for r in rows]
+            }
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
