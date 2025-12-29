@@ -213,6 +213,50 @@ async def debug_test_income():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+@app.get("/debug/test-budget")
+async def debug_test_budget():
+    """Debug endpoint to test budget creation flow."""
+    try:
+        async with db.get_connection() as conn:
+            # Try inserting a test budget
+            test_user_id = 1  # May not exist, but will show if there are other errors
+            cursor = await conn.execute(
+                """
+                INSERT INTO budgets (user_id, category, monthly_limit)
+                VALUES (?, ?, ?)
+                """,
+                (test_user_id, "Debug Test Category", 100.00)
+            )
+            await conn.commit()
+            
+            new_id = cursor.lastrowid
+            
+            # Try fetching the row
+            if new_id:
+                fetch_cursor = await conn.execute("SELECT * FROM budgets WHERE id = ?", (new_id,))
+            else:
+                fetch_cursor = await conn.execute(
+                    "SELECT * FROM budgets WHERE category = 'Debug Test Category' AND user_id = ?", 
+                    (test_user_id,)
+                )
+            row = await fetch_cursor.fetchone()
+            
+            if row:
+                # Delete the test row
+                await conn.execute("DELETE FROM budgets WHERE category = 'Debug Test Category'")
+                await conn.commit()
+                return {
+                    "success": True, 
+                    "new_id": new_id,
+                    "row": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
+                }
+            else:
+                return {"success": False, "error": "Row not found after insert"}
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
