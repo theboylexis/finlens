@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import CategoryBadge from './CategoryBadge';
 import SplitExpenseModal from './SplitExpenseModal';
+import ConfirmModal from './ConfirmModal';
 import { Split, Trash2 } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
@@ -28,6 +29,8 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [splitExpense, setSplitExpense] = useState<Expense | null>(null);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         loadExpenses();
@@ -49,17 +52,26 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Delete this expense?')) return;
+    const confirmDelete = (id: number) => {
+        setDeleteId(id);
+    };
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+
         try {
-            const response = await fetch(`${API_URL}/api/expenses/${id}`, { 
+            setIsDeleting(true);
+            const response = await fetch(`${API_URL}/api/expenses/${deleteId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
             if (!response.ok) throw new Error('Failed to delete');
             loadExpenses();
+            setDeleteId(null);
         } catch (err) {
             console.error('Error deleting expense:', err);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -124,7 +136,7 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
                                     <Split className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(expense.id)}
+                                    onClick={() => confirmDelete(expense.id)}
                                     className="p-1 text-[#52525b] hover:text-red-400 transition-colors"
                                     title="Delete"
                                 >
@@ -143,6 +155,16 @@ export default function ExpenseList({ refreshTrigger }: ExpenseListProps) {
                     onSuccess={() => { setSplitExpense(null); loadExpenses(); }}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="Delete Expense"
+                message="Are you sure you want to delete this expense? This action cannot be undone."
+                isLoading={isDeleting}
+                confirmText="Delete Expense"
+            />
         </>
     );
 }
