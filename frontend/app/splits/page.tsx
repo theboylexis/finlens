@@ -69,7 +69,7 @@ export default function SplitBillsPage() {
         try {
             const response = await fetch(`${API_URL}/api/splits/friends`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: newFriend.name.trim(),
                     email: newFriend.email.trim() || null,
