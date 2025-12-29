@@ -30,18 +30,39 @@ async def create_budget(
         print(f"[BUDGET] Starting budget creation: category={budget.category}, limit={budget.monthly_limit}, user_id={user.get('id')}, postgres={is_postgres}")
         
         if is_postgres:
-            # PostgreSQL: Use INSERT ON CONFLICT (upsert)
-            cursor = await db.execute(
-                """
-                INSERT INTO budgets (user_id, category, monthly_limit)
-                VALUES (?, ?, ?)
-                ON CONFLICT (user_id, category) 
-                DO UPDATE SET monthly_limit = EXCLUDED.monthly_limit, updated_at = CURRENT_TIMESTAMP
-                """,
-                (user["id"], budget.category, budget.monthly_limit)
+            # PostgreSQL: Check if exists first, then INSERT or UPDATE
+            # (ON CONFLICT has issues with RETURNING in our wrapper)
+            check_cursor = await db.execute(
+                "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+                (budget.category, user["id"])
             )
+            existing = await check_cursor.fetchone()
+            print(f"[BUDGET] Postgres - existing check: {'found' if existing else 'not found'}")
+            
+            if existing:
+                # Update existing
+                await db.execute(
+                    """
+                    UPDATE budgets 
+                    SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE category = ? AND user_id = ?
+                    """,
+                    (budget.monthly_limit, budget.category, user["id"])
+                )
+                print(f"[BUDGET] Postgres - updated existing budget")
+            else:
+                # Insert new
+                await db.execute(
+                    """
+                    INSERT INTO budgets (user_id, category, monthly_limit)
+                    VALUES (?, ?, ?)
+                    """,
+                    (user["id"], budget.category, budget.monthly_limit)
+                )
+                print(f"[BUDGET] Postgres - inserted new budget")
+            
             await db.commit()
-            print(f"[BUDGET] Upsert complete")
+            print(f"[BUDGET] Postgres - commit complete")
             
             # Fetch the result
             fetch_cursor = await db.execute(
