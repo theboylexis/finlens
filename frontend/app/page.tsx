@@ -49,8 +49,8 @@ export default function Home() {
           )}
 
           {/* Summary Cards */}
-          <SafeToSpendCard />
-          <WeeklySummaryCard />
+          <SafeToSpendCard refreshTrigger={refreshTrigger} />
+          <WeeklySummaryCard refreshTrigger={refreshTrigger} />
 
           {/* Quick Stats */}
           <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">

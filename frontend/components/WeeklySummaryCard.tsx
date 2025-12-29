@@ -4,7 +4,11 @@ import { useState, useEffect } from 'react';
 import { getWeeklySummary, WeeklySummary } from '@/lib/api';
 import { Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-export default function WeeklySummaryCard() {
+interface WeeklySummaryCardProps {
+    refreshTrigger?: number;
+}
+
+export default function WeeklySummaryCard({ refreshTrigger = 0 }: WeeklySummaryCardProps) {
     const [data, setData] = useState<WeeklySummary | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -21,7 +25,7 @@ export default function WeeklySummaryCard() {
         };
 
         fetchData();
-    }, []);
+    }, [refreshTrigger]);
 
     const getChangeIcon = () => {
         if (!data) return Minus;

@@ -5,7 +5,11 @@ import { useState, useEffect } from 'react';
 import { getSafeToSpend, getIncomeSummary, SafeToSpend } from '@/lib/api';
 import { Wallet, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
-export default function SafeToSpendCard() {
+interface SafeToSpendCardProps {
+    refreshTrigger?: number;
+}
+
+export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardProps) {
     const [data, setData] = useState<SafeToSpend | null>(null);
     const [income, setIncome] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
@@ -28,7 +32,7 @@ export default function SafeToSpendCard() {
             }
         };
         fetchData();
-    }, []);
+    }, [refreshTrigger]);
 
     const getStatusConfig = () => {
         if (!data) return { color: 'text-gray-400', bg: 'bg-gray-500/10', icon: Wallet };
