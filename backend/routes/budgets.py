@@ -22,16 +22,21 @@ async def create_budget(
     user: dict = Depends(require_auth)
 ):
     """Create or update a budget for a category for the current user."""
+    import traceback
     try:
+        print(f"[BUDGET] Starting budget creation: category={budget.category}, limit={budget.monthly_limit}, user_id={user.get('id')}")
+        
         # Check if budget already exists for this user/category
         cursor = await db.execute(
             "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
             (budget.category, user["id"])
         )
         existing = await cursor.fetchone()
+        print(f"[BUDGET] Existing check complete: {'found' if existing else 'not found'}")
         
         if existing:
             # Update existing budget
+            print(f"[BUDGET] Updating existing budget id={existing['id']}")
             await db.execute(
                 """
                 UPDATE budgets 
@@ -43,6 +48,7 @@ async def create_budget(
             budget_id = existing["id"]
         else:
             # Create new budget
+            print(f"[BUDGET] Creating new budget")
             cursor = await db.execute(
                 """
                 INSERT INTO budgets (user_id, category, monthly_limit)
@@ -51,34 +57,43 @@ async def create_budget(
                 (user["id"], budget.category, budget.monthly_limit)
             )
             budget_id = cursor.lastrowid
+            print(f"[BUDGET] Insert complete, lastrowid={budget_id}")
         
         await db.commit()
+        print(f"[BUDGET] Commit complete")
         
         # Fetch created/updated budget - fallback if lastrowid failed
         if budget_id:
+            print(f"[BUDGET] Fetching by id={budget_id}")
             fetch_cursor = await db.execute("SELECT * FROM budgets WHERE id = ?", (budget_id,))
         else:
+            print(f"[BUDGET] Fetching by category={budget.category} user_id={user['id']}")
             fetch_cursor = await db.execute(
                 "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
                 (budget.category, user["id"])
             )
         row = await fetch_cursor.fetchone()
+        print(f"[BUDGET] Fetch complete: row={'found' if row else 'None'}")
         
         if not row:
+            print(f"[BUDGET] ERROR: Row not found after insert/update")
             raise HTTPException(status_code=500, detail="Failed to fetch created budget")
         
-        return BudgetResponse(
+        print(f"[BUDGET] Building response")
+        response = BudgetResponse(
             id=row["id"],
             category=row["category"],
             monthly_limit=float(row["monthly_limit"]),
             created_at=row["created_at"],
             updated_at=row["updated_at"]
         )
+        print(f"[BUDGET] Success! Returning budget id={response.id}")
+        return response
+        
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        print(f"Error creating budget: {e}")
+        print(f"[BUDGET] ERROR: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to create budget: {str(e)}")
 
