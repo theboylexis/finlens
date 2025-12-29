@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSafeToSpend, SafeToSpend, getIncomeSummary } from '@/lib/api';
 import { Wallet, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
+export default function SafeToSpendCard() {
     const [data, setData] = useState<SafeToSpend | null>(null);
     const [income, setIncome] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
