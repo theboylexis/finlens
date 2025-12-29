@@ -150,6 +150,22 @@ async def debug_env():
     }
 
 
+@app.get("/debug/tables")
+async def debug_tables():
+    """Debug endpoint to check database tables."""
+    try:
+        conn = await db.get_connection()
+        if db.is_postgres:
+            tables = await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+            return {"tables": [t["table_name"] for t in tables], "db_type": "postgres"}
+        else:
+            cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = await cursor.fetchall()
+            return {"tables": [t["name"] for t in tables], "db_type": "sqlite"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # Include routers
 from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
 
