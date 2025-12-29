@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Plus, X, Target, Plane, Car, Home, Laptop, BookOpen, Briefcase, Heart, GraduationCap, Dumbbell } from 'lucide-react';
+import { Check, Plus, Trash2, Target, Plane, Car, Home, Laptop, BookOpen, Briefcase, Heart, GraduationCap, Dumbbell } from 'lucide-react';
 
 interface Goal {
     id: number;
@@ -120,7 +120,7 @@ export default function GoalCard({ goal, onContribute, onDelete }: GoalCardProps
                     className="p-1.5 text-[#52525b] hover:text-red-400 transition-colors"
                     title="Delete goal"
                 >
-                    <X className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                 </button>
             </div>
         </div>
