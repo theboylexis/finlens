@@ -316,10 +316,17 @@ async def get_safe_to_spend(
     
     user_filter, user_params = build_user_filter(user)
     
-    # Get total monthly budget
-    cursor = await db.execute("SELECT COALESCE(SUM(monthly_limit), 0) as total FROM budgets WHERE user_id = ?", (user["id"],))
+    # Get total monthly income (instead of budgets)
+    cursor = await db.execute(
+        """
+        SELECT COALESCE(SUM(amount), 0) as total 
+        FROM incomes 
+        WHERE user_id = ? AND date >= ? AND date <= ?
+        """, 
+        (user["id"], start_date, end_date)
+    )
     row = await cursor.fetchone()
-    total_budget = float(row["total"]) if row else 0.0
+    total_income = float(row["total"]) if row else 0.0
     
     # Get total spent this month
     cursor = await db.execute(
@@ -369,27 +376,27 @@ async def get_safe_to_spend(
             monthly_contribution = remaining_to_save / months_until
             goals_reserved += monthly_contribution
     
-    # Calculate remaining budget and safe to spend
-    remaining_budget = total_budget - spent_this_month
-    disposable = remaining_budget - goals_reserved
+    # Calculate remaining income and safe to spend
+    remaining_income = total_income - spent_this_month
+    disposable = remaining_income - goals_reserved
     safe_to_spend_today = max(disposable / days_remaining, 0)
     
     # Determine status
-    if total_budget == 0:
-        status = "no_budget"
+    if total_income == 0:
+        status = "no_income"
     elif disposable < 0:
         status = "danger"
-    elif (spent_this_month / total_budget * 100) > 80 if total_budget > 0 else False:
+    elif (spent_this_month / total_income * 100) > 80 if total_income > 0 else False:
         status = "caution"
     else:
         status = "healthy"
     
     return SafeToSpendResponse(
         safe_to_spend_today=round(safe_to_spend_today, 2),
-        total_budget=round(total_budget, 2),
+        total_budget=round(total_income, 2),  # Renamed field still returns income
         spent_this_month=round(spent_this_month, 2),
         goals_reserved=round(goals_reserved, 2),
-        remaining_budget=round(remaining_budget, 2),
+        remaining_budget=round(remaining_income, 2),  # Renamed field still returns remaining income
         days_remaining=days_remaining,
         status=status
     )

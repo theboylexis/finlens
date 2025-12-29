@@ -118,7 +118,7 @@ export interface SafeToSpend {
   goals_reserved: number;
   remaining_budget: number;
   days_remaining: number;
-  status: 'healthy' | 'caution' | 'danger' | 'no_budget';
+  status: 'healthy' | 'caution' | 'danger' | 'no_budget' | 'no_income';
 }
 
 export async function getSafeToSpend(): Promise<SafeToSpend> {
