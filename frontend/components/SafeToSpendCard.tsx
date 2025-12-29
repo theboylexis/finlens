@@ -83,7 +83,7 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
                 (data.status === 'no_budget' || data.status === 'no_income') ? (
                     <div className="text-center py-2">
                         <div className="text-2xl font-bold text-gray-400 mb-3">— —</div>
-                        <p className="text-xs text-amber-400">
+                        <p className="text-xs text-emerald-400">
                             💡 Add your income to see your safe spending amount
                         </p>
                     </div>
