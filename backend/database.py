@@ -455,6 +455,8 @@ CATEGORIES_DATA = [
     ("Tuition & Fees", "🎓", "#0ea5e9", '["tuition", "enrollment", "registration", "exam fee", "transcript", "application fee", "semester fee"]', "University tuition and academic fees"),
     ("Campus Food", "🍕", "#fb923c", '["cafeteria", "dining hall", "meal plan", "campus restaurant", "student center", "food court"]', "On-campus dining and meal plans"),
     ("Study Tools", "💻", "#8b5cf6", '["chegg", "quizlet", "grammarly", "notion", "canva", "chatgpt", "turnitin", "mathway"]', "Digital tools and subscriptions for studying"),
+    ("Dorm & Housing", "🏠", "#0d9488", '["dorm", "residence", "hostel", "hall", "room rent", "housing", "accommodation", "apartment", "roommate"]', "Dormitory and housing expenses"),
+    ("Club Dues & Activities", "🎭", "#db2777", '["club", "society", "membership", "dues", "association", "fraternity", "sorority", "student org", "union"]', "Student organization fees and activities"),
     ("Other", "📌", "#6b7280", '[]', "Miscellaneous expenses"),
 ]
 

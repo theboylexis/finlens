@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import CategoryBadge from './CategoryBadge';
 import SplitExpenseModal from './SplitExpenseModal';
 import ConfirmModal from './ConfirmModal';
-import { Split, Trash2 } from 'lucide-react';
+import { Split, Trash2, Target, Plus } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface Expense {
@@ -98,7 +98,25 @@ export default function ExpenseList({ refreshTrigger, onDeleteSuccess }: Expense
     }
 
     if (expenses.length === 0) {
-        return <p className="text-sm text-[#52525b] text-center py-8">No expenses yet</p>;
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                    <Target className="w-8 h-8 text-emerald-400" />
+                </div>
+                <h3 className="text-sm font-medium text-white mb-2">No expenses yet</h3>
+                <p className="text-xs text-[#52525b] mb-4 max-w-xs">
+                    Add your first expense to start tracking! 🎯<br />
+                    Our AI will automatically categorize it for you.
+                </p>
+                <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('openExpenseForm'))}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-black text-sm font-medium rounded-lg transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add First Expense
+                </button>
+            </div>
+        );
     }
 
     return (

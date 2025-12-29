@@ -328,7 +328,7 @@ async def debug_test_food_budget():
 
 
 # Include routers
-from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income
+from routes import expenses, categories, analytics, budgets, queries, goals, alerts, splits, auth, subscriptions, income, nudges, gamification
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(expenses.router, prefix="/api/expenses", tags=["Expenses"])
@@ -341,6 +341,8 @@ app.include_router(alerts.router, prefix="/api/alerts", tags=["Spending Alerts"]
 app.include_router(splits.router, prefix="/api/splits", tags=["Split Bills"])
 app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["Subscriptions"])
 app.include_router(income.router, prefix="/api/income", tags=["Income"])
+app.include_router(nudges.router, tags=["Nudges"])
+app.include_router(gamification.router, tags=["Gamification"])
 
 
 if __name__ == "__main__":
