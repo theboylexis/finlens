@@ -156,14 +156,16 @@ async def debug_tables():
     try:
         async with db.get_connection() as conn:
             if db.is_postgres:
-                tables = await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                return {"tables": [t["table_name"] for t in tables], "db_type": "postgres"}
+                cursor = await conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                tables = await cursor.fetchall()
+                return {"tables": [dict(t).get("table_name", list(dict(t).values())[0]) for t in tables], "db_type": "postgres"}
             else:
                 cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 tables = await cursor.fetchall()
                 return {"tables": [t["name"] for t in tables], "db_type": "sqlite"}
     except Exception as e:
-        return {"error": str(e)}
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 
 # Include routers
