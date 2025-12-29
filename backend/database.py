@@ -823,6 +823,28 @@ class Database:
             except Exception as e:
                 print(f"Warning during Postgres migration check for budget_alert_tracking: {e}")
 
+            # Fix incorrect UNIQUE constraint on budgets table
+            # There's a stale constraint 'budgets_category_key' that only includes category, not (user_id, category)
+            try:
+                # Check if the bad constraint exists
+                constraints = await conn.fetch("""
+                    SELECT constraint_name FROM information_schema.table_constraints 
+                    WHERE table_name = 'budgets' AND constraint_type = 'UNIQUE'
+                """)
+                constraint_names = [r['constraint_name'] for r in constraints]
+                
+                if 'budgets_category_key' in constraint_names:
+                    print("🚀 Migrating PostgreSQL: Fixing budgets table unique constraint...")
+                    await conn.execute("ALTER TABLE budgets DROP CONSTRAINT budgets_category_key")
+                    print("✓ Dropped incorrect budgets_category_key constraint")
+                    
+                    # Ensure the correct constraint exists
+                    if 'budgets_user_id_category_key' not in constraint_names:
+                        await conn.execute("ALTER TABLE budgets ADD CONSTRAINT budgets_user_id_category_key UNIQUE (user_id, category)")
+                        print("✓ Added correct budgets_user_id_category_key constraint")
+            except Exception as e:
+                print(f"Warning during Postgres migration check for budgets constraints: {e}")
+
             # Check for incomes table
             try:
                 tables = await conn.fetch("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'incomes'")
