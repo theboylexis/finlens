@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
+import ConfirmModal from '@/components/ConfirmModal';
 import { UserPlus, Sparkles, X, Trash2 } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
@@ -40,6 +41,8 @@ export default function SplitBillsPage() {
     const [showAddFriend, setShowAddFriend] = useState(false);
     const [newFriend, setNewFriend] = useState({ name: '', email: '', phone: '' });
     const [addingFriend, setAddingFriend] = useState(false);
+    const [deleteFriendId, setDeleteFriendId] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -86,10 +89,18 @@ export default function SplitBillsPage() {
         }
     };
 
-    const handleDeleteFriend = async (friendId: number) => {
-        if (!confirm('Delete this friend?')) return;
-        await fetch(`${API_URL}/api/splits/friends/${friendId}`, { method: 'DELETE', headers: getAuthHeaders() });
-        fetchData();
+    const handleDeleteFriend = async () => {
+        if (!deleteFriendId) return;
+        setIsDeleting(true);
+        try {
+            await fetch(`${API_URL}/api/splits/friends/${deleteFriendId}`, { method: 'DELETE', headers: getAuthHeaders() });
+            setDeleteFriendId(null);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting friend:', error);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleSettleAll = async (friendId: number) => {
@@ -178,7 +189,7 @@ export default function SplitBillsPage() {
                                                 </div>
                                                 <span className="text-sm text-white">{f.name}</span>
                                             </div>
-                                            <button onClick={() => handleDeleteFriend(f.id)} className="p-1 text-[#52525b] hover:text-red-400 transition-colors">
+                                            <button onClick={() => setDeleteFriendId(f.id)} className="p-1 text-[#52525b] hover:text-red-400 transition-colors" title="Delete friend">
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
@@ -211,6 +222,18 @@ export default function SplitBillsPage() {
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!deleteFriendId}
+                onClose={() => setDeleteFriendId(null)}
+                onConfirm={handleDeleteFriend}
+                title="Delete Friend"
+                message="Are you sure you want to delete this friend? All split bill records with them will be removed."
+                isLoading={isDeleting}
+                confirmText="Delete"
+                type="danger"
+            />
         </AppLayout>
     );
 }

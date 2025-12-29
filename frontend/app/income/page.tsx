@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import IncomeModal from '@/components/IncomeModal';
-import { fetchIncome, getIncomeSummary, Income, IncomeSummary } from '@/lib/api';
+import ConfirmModal from '@/components/ConfirmModal';
+import { fetchIncome, getIncomeSummary, deleteIncome, Income, IncomeSummary } from '@/lib/api';
 import { Plus, Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, Trash2, LucideIcon } from 'lucide-react';
 
 const INCOME_ICONS: Record<string, LucideIcon> = {
@@ -20,6 +21,8 @@ export default function IncomePage() {
     const [summary, setSummary] = useState<IncomeSummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -38,6 +41,20 @@ export default function IncomePage() {
             console.error('Failed to load income data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        setIsDeleting(true);
+        try {
+            await deleteIncome(deleteId);
+            setDeleteId(null);
+            loadData();
+        } catch (e) {
+            console.error('Failed to delete:', e);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -119,18 +136,9 @@ export default function IncomePage() {
                                         <p className="text-xs text-[#52525b]">{income.category}</p>
                                     </div>
                                     <button
-                                        onClick={async () => {
-                                            if (!confirm('Delete this income?')) return;
-                                            try {
-                                                const { deleteIncome } = await import('@/lib/api');
-                                                await deleteIncome(income.id);
-                                                loadData();
-                                            } catch (e) {
-                                                console.error('Failed to delete:', e);
-                                            }
-                                        }}
+                                        onClick={() => setDeleteId(income.id)}
                                         className="text-[#52525b] hover:text-red-400 transition-colors p-1"
-                                        title="Delete"
+                                        title="Delete income"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -151,6 +159,18 @@ export default function IncomePage() {
                     }}
                 />
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="Delete Income"
+                message="Are you sure you want to delete this income entry?"
+                isLoading={isDeleting}
+                confirmText="Delete"
+                type="danger"
+            />
         </div>
     );
 }

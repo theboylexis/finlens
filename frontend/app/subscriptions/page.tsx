@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
+import ConfirmModal from '@/components/ConfirmModal';
 import {
     getSubscriptions,
     getSubscriptionSummary,
@@ -27,6 +28,8 @@ export default function SubscriptionsPage() {
         reminder_days: 3,
         notes: ''
     });
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -67,13 +70,17 @@ export default function SubscriptionsPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this subscription?')) return;
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        setIsDeleting(true);
         try {
-            await deleteSubscription(id);
+            await deleteSubscription(deleteId);
+            setDeleteId(null);
             fetchData();
         } catch (error) {
             console.error('Failed to delete subscription:', error);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -180,8 +187,9 @@ export default function SubscriptionsPage() {
                                             ~GHS {sub.monthly_cost.toFixed(2)}/mo
                                         </span>
                                         <button
-                                            onClick={() => handleDelete(sub.id)}
+                                            onClick={() => setDeleteId(sub.id)}
                                             className="p-2 text-[#52525b] hover:text-red-400 transition-colors"
+                                            title="Delete subscription"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -280,6 +288,18 @@ export default function SubscriptionsPage() {
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="Delete Subscription"
+                message="Are you sure you want to delete this subscription? This action cannot be undone."
+                isLoading={isDeleting}
+                confirmText="Delete"
+                type="danger"
+            />
         </AppLayout>
     );
 }

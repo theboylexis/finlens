@@ -5,6 +5,7 @@ import AppLayout from '@/components/AppLayout';
 import GoalCard from '@/components/GoalCard';
 import AddGoalModal from '@/components/AddGoalModal';
 import ContributeModal from '@/components/ContributeModal';
+import ConfirmModal from '@/components/ConfirmModal';
 import { Plus, PartyPopper, Target, ChevronDown, ChevronRight } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
@@ -32,6 +33,8 @@ export default function GoalsPage() {
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
   const [celebratingGoal, setCelebratingGoal] = useState<Goal | null>(null);
+  const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchGoals = useCallback(async () => {
     try {
@@ -81,14 +84,18 @@ export default function GoalsPage() {
     }
   };
 
-  const handleDeleteGoal = async (goalId: number) => {
-    if (!confirm('Delete this goal?')) return;
+  const handleDeleteGoal = async () => {
+    if (!deleteGoalId) return;
+    setIsDeleting(true);
     try {
-      const response = await fetch(`${API_URL}/api/goals/${goalId}`, { method: 'DELETE', headers: getAuthHeaders() });
+      const response = await fetch(`${API_URL}/api/goals/${deleteGoalId}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Failed to delete goal');
+      setDeleteGoalId(null);
       fetchGoals();
     } catch (err) {
       console.error('Error deleting goal:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -159,7 +166,7 @@ export default function GoalsPage() {
                     key={goal.id}
                     goal={goal}
                     onContribute={() => setContributeGoal(goal)}
-                    onDelete={() => handleDeleteGoal(goal.id)}
+                    onDelete={() => setDeleteGoalId(goal.id)}
                   />
                 ))}
               </div>
@@ -182,7 +189,7 @@ export default function GoalsPage() {
                       key={goal.id}
                       goal={goal}
                       onContribute={() => { }}
-                      onDelete={() => handleDeleteGoal(goal.id)}
+                      onDelete={() => setDeleteGoalId(goal.id)}
                     />
                   ))}
                 </div>
@@ -198,6 +205,18 @@ export default function GoalsPage() {
       {contributeGoal && (
         <ContributeModal goal={contributeGoal} onClose={() => setContributeGoal(null)} onContribute={handleContribute} />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteGoalId}
+        onClose={() => setDeleteGoalId(null)}
+        onConfirm={handleDeleteGoal}
+        title="Delete Goal"
+        message="Are you sure you want to delete this savings goal? All progress will be lost."
+        isLoading={isDeleting}
+        confirmText="Delete"
+        type="danger"
+      />
     </AppLayout>
   );
 }
