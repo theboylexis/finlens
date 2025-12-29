@@ -67,7 +67,13 @@ async def create_budget(
         if not row:
             raise HTTPException(status_code=500, detail="Failed to fetch created budget")
         
-        return dict(row)
+        return BudgetResponse(
+            id=row["id"],
+            category=row["category"],
+            monthly_limit=float(row["monthly_limit"]),
+            created_at=row["created_at"],
+            updated_at=row["updated_at"]
+        )
     except HTTPException:
         raise
     except Exception as e:
