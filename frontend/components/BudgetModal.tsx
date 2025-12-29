@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuthHeaders, API_URL, fetchBudgets, createBudget, deleteBudget, Budget } from '@/lib/api';
+import { getAuthHeaders, API_URL, fetchBudgets, createBudget, deleteBudget, Budget, getIncomeSummary } from '@/lib/api';
 
 interface Category {
     id: number;
@@ -21,16 +21,19 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [incomeSummary, setIncomeSummary] = useState<{ total_income: number } | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [budgetsData, categoriesRes] = await Promise.all([
+                const [budgetsData, categoriesRes, income] = await Promise.all([
                     fetchBudgets(),
-                    fetch(`${API_URL}/api/categories/`)
+                    fetch(`${API_URL}/api/categories/`),
+                    getIncomeSummary()
                 ]);
                 setBudgets(budgetsData);
                 if (categoriesRes.ok) setCategories(await categoriesRes.json());
+                setIncomeSummary(income);
             } catch (error) {
                 console.error('Error fetching data:', error);
             } finally {
@@ -39,6 +42,10 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
         };
         fetchData();
     }, []);
+    // Calculate total budget
+    const totalBudget = budgets.reduce((sum, b) => sum + b.monthly_limit, 0) + (amount ? parseFloat(amount) : 0);
+    const income = incomeSummary?.total_income || 0;
+    const overBudget = income > 0 && totalBudget > income;
 
     const handleSave = async () => {
         if (!selectedCategory || !amount) return;
@@ -94,6 +101,16 @@ export default function BudgetModal({ onClose, onSuccess }: BudgetModalProps) {
                         {/* Add New Budget */}
                         <div className="mb-4 p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
                             <p className="text-xs text-[#a1a1aa] mb-2">Add Budget</p>
+                            {income > 0 && (
+                                <div className="mb-2 text-xs text-[#a1a1aa]">
+                                    Monthly income: <span className="text-emerald-400 font-semibold">GHS {income.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {overBudget && (
+                                <div className="mb-2 text-xs text-red-400">
+                                    ⚠️ Your total budget (GHS {totalBudget.toFixed(2)}) exceeds your monthly income (GHS {income.toFixed(2)}).
+                                </div>
+                            )}
                             <div className="flex gap-2">
                                 <select
                                     value={selectedCategory}

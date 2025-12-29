@@ -1,19 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSafeToSpend, SafeToSpend } from '@/lib/api';
+import { getSafeToSpend, SafeToSpend, getIncomeSummary } from '@/lib/api';
 import { Wallet, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
-export default function SafeToSpendCard() {
     const [data, setData] = useState<SafeToSpend | null>(null);
+    const [income, setIncome] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const result = await getSafeToSpend();
+                const [result, incomeSummary] = await Promise.all([
+                    getSafeToSpend(),
+                    getIncomeSummary()
+                ]);
                 setData(result);
+                setIncome(incomeSummary?.total_income ?? null);
                 setError(null);
             } catch (err) {
                 setError('Unable to calculate');
@@ -21,7 +25,6 @@ export default function SafeToSpendCard() {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
@@ -36,6 +39,7 @@ export default function SafeToSpendCard() {
             case 'danger':
                 return { color: 'text-red-400', bg: 'bg-red-500/10', icon: TrendingDown };
             case 'no_budget':
+            case 'no_income':
                 return { color: 'text-gray-400', bg: 'bg-gray-500/10', icon: Wallet };
             default:
                 return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: Wallet };
@@ -61,10 +65,19 @@ export default function SafeToSpendCard() {
                 <Icon className={`w-5 h-5 ${config.color}`} />
             </div>
 
+            <div className="mb-2 text-xs text-[#a1a1aa]">
+                Calculation is based on your <span className="font-semibold text-emerald-400">budget</span>.
+                {income !== null && (
+                    <>
+                        <br />Monthly income: <span className="font-semibold text-emerald-400">GHS {income.toFixed(2)}</span>
+                    </>
+                )}
+            </div>
+
             {error ? (
                 <p className="text-sm text-[#52525b]">{error}</p>
             ) : data ? (
-                data.status === 'no_budget' ? (
+                (data.status === 'no_budget' || data.status === 'no_income') ? (
                     <div>
                         <div className="text-3xl font-bold text-gray-400 mb-2">
                             — —
@@ -73,7 +86,7 @@ export default function SafeToSpendCard() {
                             You spent <span className="text-white">GHS {data.spent_this_month.toFixed(2)}</span> this month
                         </p>
                         <p className="mt-3 text-xs text-amber-400">
-                            💡 Set up budgets in Analytics to see your safe spending amount
+                            💡 Add your income to see your safe spending amount
                         </p>
                     </div>
                 ) : (
@@ -97,6 +110,12 @@ export default function SafeToSpendCard() {
                                 <span className="text-[#a1a1aa]">{data.days_remaining}</span>
                             </div>
                         </div>
+                        {income !== null && (
+                            <div className="mt-2 text-xs text-[#a1a1aa]">
+                                {/* Optionally show what it would be if based on income */}
+                                <span className="font-semibold">If based on income:</span> GHS {(income - data.spent_this_month).toFixed(2)}
+                            </div>
+                        )}
                         {data.status === 'danger' && (
                             <p className="mt-3 text-xs text-red-400">
                                 ⚠️ You've exceeded your budget for this month
