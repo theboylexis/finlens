@@ -23,55 +23,70 @@ async def create_budget(
 ):
     """Create or update a budget for a category for the current user."""
     import traceback
+    import os
+    is_postgres = 'DATABASE_URL' in os.environ and 'postgres' in os.environ.get('DATABASE_URL', '')
+    
     try:
-        print(f"[BUDGET] Starting budget creation: category={budget.category}, limit={budget.monthly_limit}, user_id={user.get('id')}")
+        print(f"[BUDGET] Starting budget creation: category={budget.category}, limit={budget.monthly_limit}, user_id={user.get('id')}, postgres={is_postgres}")
         
-        # Check if budget already exists for this user/category
-        cursor = await db.execute(
-            "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
-            (budget.category, user["id"])
-        )
-        existing = await cursor.fetchone()
-        print(f"[BUDGET] Existing check complete: {'found' if existing else 'not found'}")
-        
-        if existing:
-            # Update existing budget
-            print(f"[BUDGET] Updating existing budget id={existing['id']}")
-            await db.execute(
-                """
-                UPDATE budgets 
-                SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE category = ? AND user_id = ?
-                """,
-                (budget.monthly_limit, budget.category, user["id"])
-            )
-            budget_id = existing["id"]
-        else:
-            # Create new budget
-            print(f"[BUDGET] Creating new budget")
+        if is_postgres:
+            # PostgreSQL: Use INSERT ON CONFLICT (upsert)
             cursor = await db.execute(
                 """
                 INSERT INTO budgets (user_id, category, monthly_limit)
                 VALUES (?, ?, ?)
+                ON CONFLICT (user_id, category) 
+                DO UPDATE SET monthly_limit = EXCLUDED.monthly_limit, updated_at = CURRENT_TIMESTAMP
                 """,
                 (user["id"], budget.category, budget.monthly_limit)
             )
-            budget_id = cursor.lastrowid
-            print(f"[BUDGET] Insert complete, lastrowid={budget_id}")
-        
-        await db.commit()
-        print(f"[BUDGET] Commit complete")
-        
-        # Fetch created/updated budget - fallback if lastrowid failed
-        if budget_id:
-            print(f"[BUDGET] Fetching by id={budget_id}")
-            fetch_cursor = await db.execute("SELECT * FROM budgets WHERE id = ?", (budget_id,))
-        else:
-            print(f"[BUDGET] Fetching by category={budget.category} user_id={user['id']}")
+            await db.commit()
+            print(f"[BUDGET] Upsert complete")
+            
+            # Fetch the result
             fetch_cursor = await db.execute(
                 "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
                 (budget.category, user["id"])
             )
+        else:
+            # SQLite: Check if exists first (SQLite upsert syntax differs)
+            cursor = await db.execute(
+                "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
+                (budget.category, user["id"])
+            )
+            existing = await cursor.fetchone()
+            
+            if existing:
+                await db.execute(
+                    """
+                    UPDATE budgets 
+                    SET monthly_limit = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE category = ? AND user_id = ?
+                    """,
+                    (budget.monthly_limit, budget.category, user["id"])
+                )
+                budget_id = existing["id"]
+            else:
+                cursor = await db.execute(
+                    """
+                    INSERT INTO budgets (user_id, category, monthly_limit)
+                    VALUES (?, ?, ?)
+                    """,
+                    (user["id"], budget.category, budget.monthly_limit)
+                )
+                budget_id = cursor.lastrowid
+            
+            await db.commit()
+            
+            # Fetch the result
+            if budget_id:
+                fetch_cursor = await db.execute("SELECT * FROM budgets WHERE id = ?", (budget_id,))
+            else:
+                fetch_cursor = await db.execute(
+                    "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
+                    (budget.category, user["id"])
+                )
+        
         row = await fetch_cursor.fetchone()
         print(f"[BUDGET] Fetch complete: row={'found' if row else 'None'}")
         
