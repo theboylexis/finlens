@@ -71,27 +71,19 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
                 <Icon className={`w-5 h-5 ${config.color}`} />
             </div>
 
-            <div className="mb-2 text-xs text-[#a1a1aa]">
-                Calculation is based on your <span className="font-semibold text-emerald-400">budget</span>.
-                {income !== null && (
-                    <>
-                        <br />Monthly income: <span className="font-semibold text-emerald-400">GHS {income.toFixed(2)}</span>
-                    </>
-                )}
-            </div>
+            {income !== null && income > 0 && (
+                <div className="mb-2 text-xs text-[#a1a1aa]">
+                    Monthly income: <span className="font-semibold text-emerald-400">GHS {income.toFixed(2)}</span>
+                </div>
+            )}
 
             {error ? (
                 <p className="text-sm text-[#52525b]">{error}</p>
             ) : data ? (
                 (data.status === 'no_budget' || data.status === 'no_income') ? (
-                    <div>
-                        <div className="text-3xl font-bold text-gray-400 mb-2">
-                            — —
-                        </div>
-                        <p className="text-xs text-[#52525b] mb-2">
-                            You spent <span className="text-white">GHS {data.spent_this_month.toFixed(2)}</span> this month
-                        </p>
-                        <p className="mt-3 text-xs text-amber-400">
+                    <div className="text-center py-2">
+                        <div className="text-2xl font-bold text-gray-400 mb-3">— —</div>
+                        <p className="text-xs text-amber-400">
                             💡 Add your income to see your safe spending amount
                         </p>
                     </div>
