@@ -2,19 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { fetchIncome, createIncome, deleteIncome, Income, IncomeCreate } from '@/lib/api';
+import { Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, X, Trash2, LucideIcon } from 'lucide-react';
 
 interface IncomeModalProps {
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const INCOME_CATEGORIES = [
-    { name: 'Job', icon: '💼' },
-    { name: 'Allowance', icon: '💸' },
-    { name: 'Freelance', icon: '💻' },
-    { name: 'Gift', icon: '🎁' },
-    { name: 'Scholarship', icon: '🎓' },
-    { name: 'Other', icon: '📌' },
+interface IncomeCategory {
+    name: string;
+    icon: LucideIcon;
+}
+
+const INCOME_CATEGORIES: IncomeCategory[] = [
+    { name: 'Job', icon: Briefcase },
+    { name: 'Allowance', icon: Wallet },
+    { name: 'Freelance', icon: Laptop },
+    { name: 'Gift', icon: Gift },
+    { name: 'Scholarship', icon: GraduationCap },
+    { name: 'Other', icon: MoreHorizontal },
 ];
 
 export default function IncomeModal({ onClose, onSuccess }: IncomeModalProps) {
@@ -144,7 +150,7 @@ export default function IncomeModal({ onClose, onSuccess }: IncomeModalProps) {
                                     className="w-full px-3 py-2 bg-[#171717] border border-[#262626] rounded text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                 >
                                     {INCOME_CATEGORIES.map(cat => (
-                                        <option key={cat.name} value={cat.name}>{cat.icon} {cat.name}</option>
+                                        <option key={cat.name} value={cat.name}>{cat.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -190,8 +196,11 @@ export default function IncomeModal({ onClose, onSuccess }: IncomeModalProps) {
                                 {incomes.map(inc => (
                                     <div key={inc.id} className="flex items-center justify-between p-3 bg-[#0f0f0f] border border-[#262626] rounded-lg hover:border-[#404040] transition-colors group">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-lg">
-                                                {INCOME_CATEGORIES.find(c => c.name === inc.category)?.icon || '💵'}
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                                {(() => {
+                                                    const IconComponent = INCOME_CATEGORIES.find(c => c.name === inc.category)?.icon || Wallet;
+                                                    return <IconComponent className="w-4 h-4 text-emerald-400" />;
+                                                })()}
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium text-white">{inc.source}</p>
@@ -210,7 +219,7 @@ export default function IncomeModal({ onClose, onSuccess }: IncomeModalProps) {
                                                 className="text-[#52525b] hover:text-red-400 transition-all p-1"
                                                 title="Delete"
                                             >
-                                                ×
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>

@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import IncomeModal from '@/components/IncomeModal';
 import { fetchIncome, getIncomeSummary, Income, IncomeSummary } from '@/lib/api';
+import { Plus, Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, Trash2, LucideIcon } from 'lucide-react';
+
+const INCOME_ICONS: Record<string, LucideIcon> = {
+    'Job': Briefcase,
+    'Allowance': Wallet,
+    'Freelance': Laptop,
+    'Gift': Gift,
+    'Scholarship': GraduationCap,
+    'Other': MoreHorizontal,
+};
 
 export default function IncomePage() {
     const [incomes, setIncomes] = useState<Income[]>([]);
@@ -46,9 +56,7 @@ export default function IncomePage() {
                         onClick={() => setIsModalOpen(true)}
                         className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-black shadow-lg shadow-emerald-500/20 transition-all"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
+                        <Plus className="w-6 h-6" />
                     </button>
                 </div>
 
@@ -94,14 +102,11 @@ export default function IncomePage() {
                         {incomes.map((income) => (
                             <div key={income.id} className="bg-[#171717] border border-[#262626] rounded-xl p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-xl">
-                                        {{
-                                            'Job': '💼',
-                                            'Allowance': '💸',
-                                            'Freelance': '💻',
-                                            'Gift': '🎁',
-                                            'Scholarship': '🎓'
-                                        }[income.category] || '💰'}
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                        {(() => {
+                                            const IconComponent = INCOME_ICONS[income.category] || Wallet;
+                                            return <IconComponent className="w-5 h-5 text-emerald-400" />;
+                                        })()}
                                     </div>
                                     <div>
                                         <p className="text-white font-medium">{income.source}</p>
@@ -124,10 +129,10 @@ export default function IncomePage() {
                                                 console.error('Failed to delete:', e);
                                             }
                                         }}
-                                        className="text-[#52525b] hover:text-red-400 transition-colors p-1 text-xl"
+                                        className="text-[#52525b] hover:text-red-400 transition-colors p-1"
                                         title="Delete"
                                     >
-                                        ×
+                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>

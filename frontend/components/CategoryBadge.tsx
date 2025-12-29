@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Category, CategorySuggestion, suggestCategory } from '@/lib/api';
+import { Check, AlertTriangle, Zap, Search, Bot, Pencil } from 'lucide-react';
 
 interface CategoryBadgeProps {
     category: string;
@@ -43,11 +42,15 @@ export default function CategoryBadge({
     };
 
     // Confidence icons
-    const confidenceIcons = {
-        high: '✓',
-        medium: '⚠',
-        low: '⚡',
-    };
+    const ConfidenceIcon = {
+        high: Check,
+        medium: AlertTriangle,
+        low: Zap,
+    }[confidenceLevel];
+
+    // Method icons
+    const MethodIcon = method === 'regex' ? Search : method === 'ai' ? Bot : Pencil;
+    const methodLabel = method === 'regex' ? 'Pattern' : method === 'ai' ? 'AI' : 'Manual';
 
     return (
         <div className="inline-flex items-center gap-2">
@@ -60,15 +63,15 @@ export default function CategoryBadge({
             >
                 <span>{category}</span>
                 {showConfidence && confidence !== undefined && (
-                    <span className="opacity-90">
-                        {confidenceIcons[confidenceLevel]} {Math.round(confidence * 100)}%
+                    <span className="opacity-90 flex items-center gap-1">
+                        <ConfidenceIcon className="w-3 h-3" /> {Math.round(confidence * 100)}%
                     </span>
                 )}
             </span>
 
             {method && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {method === 'regex' ? '🔍 Pattern' : method === 'ai' ? '🤖 AI' : '✏️ Manual'}
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <MethodIcon className="w-3 h-3" /> {methodLabel}
                 </span>
             )}
         </div>
