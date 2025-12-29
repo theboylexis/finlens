@@ -62,38 +62,56 @@ async def create_income(
     user: dict = Depends(require_auth)
 ):
     """Add a new income entry."""
-    cursor = await db.execute(
-        """
-        INSERT INTO incomes (user_id, amount, source, category, date, is_recurring)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            user["id"],
-            income.amount,
-            income.source,
-            income.category,
-            income.date,
-            1 if income.is_recurring else 0
+    try:
+        cursor = await db.execute(
+            """
+            INSERT INTO incomes (user_id, amount, source, category, date, is_recurring)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user["id"],
+                income.amount,
+                income.source,
+                income.category,
+                income.date,
+                1 if income.is_recurring else 0
+            )
         )
-    )
-    await db.commit()
-    
-    new_id = cursor.lastrowid
-    
-    # Fetch created row
-    cursor = await db.execute("SELECT * FROM incomes WHERE id = ?", (new_id,))
-    row = await cursor.fetchone()
-    
-    return IncomeResponse(
-        id=row["id"],
-        user_id=row["user_id"],
-        amount=row["amount"],
-        source=row["source"],
-        category=row["category"],
-        date=row["date"],
-        is_recurring=bool(row["is_recurring"]),
-        created_at=row["created_at"]
-    )
+        await db.commit()
+        
+        new_id = cursor.lastrowid
+        
+        # Fetch created row - use ORDER BY to get most recent if lastrowid failed
+        if new_id:
+            fetch_cursor = await db.execute("SELECT * FROM incomes WHERE id = ?", (new_id,))
+        else:
+            # Fallback: fetch most recent for this user
+            fetch_cursor = await db.execute(
+                "SELECT * FROM incomes WHERE user_id = ? ORDER BY id DESC LIMIT 1", 
+                (user["id"],)
+            )
+        row = await fetch_cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=500, detail="Failed to fetch created income")
+        
+        return IncomeResponse(
+            id=row["id"],
+            user_id=row["user_id"],
+            amount=float(row["amount"]),
+            source=row["source"],
+            category=row["category"],
+            date=row["date"],
+            is_recurring=bool(row["is_recurring"]),
+            created_at=row["created_at"]
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Error creating income: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to create income: {str(e)}")
 
 
 @router.delete("/{income_id}", status_code=204)
