@@ -113,6 +113,31 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
                         <div className={`text-3xl font-bold ${config.color} mb-2`}>
                             GHS {data.safe_to_spend_today.toFixed(2)}
                         </div>
+
+                        {/* Daily Overspend Warning */}
+                        {data.over_daily_limit && (
+                            <div className="mb-3 p-2 bg-amber-500/20 border border-amber-500/30 rounded-lg">
+                                <div className="flex items-center gap-2 text-amber-400">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    <span className="text-xs font-medium">Over daily limit!</span>
+                                </div>
+                                <p className="text-xs text-amber-300 mt-1">
+                                    Spent <span className="font-semibold">GHS {data.spent_today.toFixed(2)}</span> today —
+                                    that's <span className="font-semibold">GHS {data.daily_overspend_amount.toFixed(2)}</span> over your safe amount.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Show today's spending even when not over limit */}
+                        {!data.over_daily_limit && data.spent_today > 0 && (
+                            <div className="mb-2 text-xs text-[#a1a1aa]">
+                                Spent today: <span className="font-semibold text-emerald-400">GHS {data.spent_today.toFixed(2)}</span>
+                                <span className="text-[#52525b] ml-1">
+                                    (GHS {(data.safe_to_spend_today - data.spent_today).toFixed(2)} left)
+                                </span>
+                            </div>
+                        )}
+
                         <div className="space-y-1 text-xs text-[#52525b]">
                             <div className="flex justify-between">
                                 <span>Budget remaining:</span>

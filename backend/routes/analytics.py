@@ -438,13 +438,31 @@ async def get_safe_to_spend(
     disposable = remaining_income - goals_reserved
     safe_to_spend_today = max(disposable / days_remaining, 0)
     
-    # Determine overall status (factor in budget warnings)
+    # Get today's spending
+    cursor = await db.execute(
+        f"""
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM expenses
+        WHERE date = ? AND {user_filter}
+        """,
+        (today, *user_params)
+    )
+    row = await cursor.fetchone()
+    spent_today = float(row["total"]) if row else 0.0
+    
+    # Calculate if over daily limit
+    over_daily_limit = spent_today > safe_to_spend_today
+    daily_overspend_amount = max(spent_today - safe_to_spend_today, 0)
+    
+    # Determine overall status (factor in budget warnings and daily overspend)
     if total_income == 0:
         status = "no_income"
     elif len(categories_over_budget) > 0:
         status = "danger"
     elif disposable < 0:
         status = "danger"
+    elif over_daily_limit:
+        status = "caution"
     elif len(categories_near_limit) > 0 or (spent_this_month / total_income * 100) > 80 if total_income > 0 else False:
         status = "caution"
     else:
@@ -458,6 +476,9 @@ async def get_safe_to_spend(
         remaining_budget=round(remaining_income, 2),  # Renamed field still returns remaining income
         days_remaining=days_remaining,
         status=status,
+        spent_today=round(spent_today, 2),
+        over_daily_limit=over_daily_limit,
+        daily_overspend_amount=round(daily_overspend_amount, 2),
         categories_over_budget=categories_over_budget,
         categories_near_limit=categories_near_limit,
         total_budget_limit=round(total_budget_limit, 2),

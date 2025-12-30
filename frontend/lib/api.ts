@@ -128,6 +128,10 @@ export interface SafeToSpend {
   remaining_budget: number;
   days_remaining: number;
   status: 'healthy' | 'caution' | 'danger' | 'no_budget' | 'no_income';
+  // Daily spending tracking
+  spent_today: number;
+  over_daily_limit: boolean;
+  daily_overspend_amount: number;
   // Budget tracking fields
   categories_over_budget: CategoryBudgetStatus[];
   categories_near_limit: CategoryBudgetStatus[];

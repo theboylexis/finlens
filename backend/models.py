@@ -248,6 +248,10 @@ class SafeToSpendResponse(BaseModel):
     remaining_budget: float = Field(..., description="Budget remaining after spending")
     days_remaining: int = Field(..., description="Days remaining in the month")
     status: str = Field(..., description="Status: 'healthy', 'caution', or 'danger'")
+    # Daily spending tracking
+    spent_today: float = Field(default=0.0, description="Amount spent today")
+    over_daily_limit: bool = Field(default=False, description="True if spent more than safe amount today")
+    daily_overspend_amount: float = Field(default=0.0, description="Amount over the safe to spend limit")
     # Budget tracking fields
     categories_over_budget: List[CategoryBudgetStatus] = Field(default_factory=list, description="Categories exceeding their limits")
     categories_near_limit: List[CategoryBudgetStatus] = Field(default_factory=list, description="Categories at 80%+ usage")
