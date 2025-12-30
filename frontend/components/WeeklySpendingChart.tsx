@@ -20,34 +20,18 @@ export default function WeeklySpendingChart() {
     useEffect(() => {
         const fetchWeeklyData = async () => {
             try {
-                const weeks: WeeklyData[] = [];
-                const today = new Date();
+                const response = await fetch(`${API_URL}/api/expenses/weekly-summary`);
 
-                for (let i = 7; i >= 0; i--) {
-                    const weekStart = new Date(today);
-                    weekStart.setDate(today.getDate() - today.getDay() - (i * 7));
-                    const weekEnd = new Date(weekStart);
-                    weekEnd.setDate(weekStart.getDate() + 6);
-
-                    const response = await fetch(
-                        `${API_URL}/api/expenses/?start_date=${weekStart.toISOString().split('T')[0]}&end_date=${weekEnd.toISOString().split('T')[0]}`
-                    );
-
-                    if (response.ok) {
-                        const expenses = await response.json();
-                        const total = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
-                        const weekNum = Math.ceil(weekStart.getDate() / 7);
-                        const monthName = weekStart.toLocaleDateString('en-US', { month: 'short' });
-                        weeks.push({ week: `Week ${i === 0 ? 'Current' : i}`, amount: total, weekLabel: `${monthName} W${weekNum}` });
-                    }
+                if (response.ok) {
+                    const weeks: WeeklyData[] = await response.json();
+                    setData(weeks);
+                    
+                    const current = weeks[weeks.length - 1]?.amount || 0;
+                    const previous = weeks[weeks.length - 2]?.amount || 0;
+                    setThisWeek(current);
+                    setLastWeek(previous);
+                    setChange(previous > 0 ? ((current - previous) / previous) * 100 : 0);
                 }
-
-                setData(weeks);
-                const current = weeks[weeks.length - 1]?.amount || 0;
-                const previous = weeks[weeks.length - 2]?.amount || 0;
-                setThisWeek(current);
-                setLastWeek(previous);
-                setChange(previous > 0 ? ((current - previous) / previous) * 100 : 0);
             } catch (error) {
                 console.error('Error fetching weekly data:', error);
             } finally {

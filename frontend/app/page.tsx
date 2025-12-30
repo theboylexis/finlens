@@ -136,7 +136,7 @@ export default function Home() {
       )}
 
       {/* Quick Add FAB for mobile */}
-      <QuickAddButton onClick={() => setShowForm(true)} />
+      <QuickAddButton onClick={() => setShowForm(true)} isHidden={showForm} />
     </>
   );
 }

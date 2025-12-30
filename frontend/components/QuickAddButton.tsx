@@ -4,9 +4,12 @@ import { Plus } from 'lucide-react';
 
 interface QuickAddButtonProps {
     onClick: () => void;
+    isHidden?: boolean;
 }
 
-export default function QuickAddButton({ onClick }: QuickAddButtonProps) {
+export default function QuickAddButton({ onClick, isHidden }: QuickAddButtonProps) {
+    if (isHidden) return null;
+
     return (
         <button
             onClick={onClick}

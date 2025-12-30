@@ -183,7 +183,7 @@ async def get_expenses(
     
     # Filter by user if authenticated
     if current_user:
-        query += " AND (user_id = ? OR user_id IS NULL)"
+        query += " AND user_id = ?"
         params.append(current_user["id"])
     
     if category:
@@ -205,6 +205,54 @@ async def get_expenses(
     rows = await cursor.fetchall()
     
     return [dict(row) for row in rows]
+
+
+@router.get("/weekly-summary")
+async def get_weekly_summary(
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Get weekly spending summary for the past 8 weeks.
+    Optimized endpoint to avoid multiple round-trips from frontend.
+    """
+    today = date.today()
+    weeks = []
+    
+    # Calculate 8 weeks of data
+    for i in range(7, -1, -1):
+        # Calculate week start (Sunday)
+        week_start = today - timedelta(days=today.weekday() + 1 + (i * 7))
+        week_end = week_start + timedelta(days=6)
+        
+        # Build query with user filtering
+        query = """
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM expenses
+            WHERE date >= ? AND date <= ?
+        """
+        params = [week_start, week_end]
+        
+        if current_user:
+            query += " AND user_id = ?"
+            params.append(current_user["id"])
+        
+        cursor = await db.execute(query, params)
+        row = await cursor.fetchone()
+        total = float(row["total"]) if row else 0
+        
+        # Create week label
+        week_num = (week_start.day - 1) // 7 + 1
+        month_name = week_start.strftime('%b')
+        week_label = f"{month_name} W{week_num}"
+        
+        weeks.append({
+            "week": f"Week {'Current' if i == 0 else i}",
+            "amount": total,
+            "weekLabel": week_label
+        })
+    
+    return weeks
 
 
 @router.get("/suggest-category", response_model=CategorySuggestion)

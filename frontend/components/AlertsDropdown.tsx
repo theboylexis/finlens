@@ -81,8 +81,9 @@ export default function AlertsDropdown() {
 
             {isOpen && (
                 <>
-                    <div className="fixed inset-0" onClick={() => setIsOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-[#171717] border border-[#262626] rounded-lg shadow-xl z-50">
+                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                    {/* Mobile: fixed full-width dropdown, Desktop: absolute positioned */}
+                    <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 sm:w-80 bg-[#171717] border border-[#262626] rounded-lg shadow-xl z-50 max-h-[70vh] sm:max-h-96 overflow-hidden">
                         <div className="flex items-center justify-between p-3 border-b border-[#262626]">
                             <span className="text-sm font-medium text-white">Notifications</span>
                             {summary && summary.unread_count > 0 && (
@@ -106,13 +107,13 @@ export default function AlertsDropdown() {
                                             className={`p-2 rounded-md border ${getAlertColor(alert.type)} ${!alert.is_read ? 'border-l-2' : ''}`}
                                         >
                                             <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <p className="text-xs font-medium text-white">{alert.title}</p>
-                                                    <p className="text-xs text-[#a1a1aa] mt-0.5">{alert.message}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-medium text-white truncate">{alert.title}</p>
+                                                    <p className="text-xs text-[#a1a1aa] mt-0.5 line-clamp-2">{alert.message}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => dismiss(alert.id)}
-                                                    className="p-0.5 text-[#52525b] hover:text-red-400"
+                                                    className="p-0.5 text-[#52525b] hover:text-red-400 flex-shrink-0 ml-2"
                                                 >
                                                     <X className="w-3 h-3" />
                                                 </button>
