@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Loader2 } from 'lucide-react';
 import {
     Category,
     CategorySuggestion,
@@ -8,6 +9,8 @@ import {
     createExpense,
     fetchCategories,
     suggestCategory,
+    API_URL,
+    getAuthHeaders,
 } from '@/lib/api';
 import CategoryBadge from './CategoryBadge';
 
@@ -22,6 +25,12 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
     const [suggestion, setSuggestion] = useState<CategorySuggestion | null>(null);
     const [suggestingCategory, setSuggestingCategory] = useState(false);
 
+    // Receipt scanning state
+    const [scanning, setScanning] = useState(false);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const [scanSuccess, setScanSuccess] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [formData, setFormData] = useState<ExpenseCreate>({
         amount: 0,
         description: '',
@@ -34,6 +43,78 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
     useEffect(() => {
         fetchCategories().then(setCategories).catch(console.error);
     }, []);
+
+    // Handle receipt scan
+    const handleScanReceipt = async (file: File) => {
+        setScanning(true);
+        setScanError(null);
+        setScanSuccess(false);
+
+        try {
+            // Convert file to base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    // Remove data:image/...;base64, prefix
+                    const base64Data = result.split(',')[1];
+                    resolve(base64Data);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            // Send to API
+            const response = await fetch(`${API_URL}/api/expenses/scan-receipt`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders(),
+                },
+                body: JSON.stringify({ image_base64: base64 }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to scan receipt');
+            }
+
+            const data = await response.json();
+
+            // Auto-fill form with extracted data
+            setFormData({
+                amount: data.amount || 0,
+                description: data.description || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                payment_method: '',
+                category: data.category,
+            });
+
+            // Set suggestion from scan
+            if (data.category) {
+                setSuggestion({
+                    category: data.category,
+                    confidence: data.confidence || 0.8,
+                    method: 'ai',
+                });
+            }
+
+            setScanSuccess(true);
+        } catch (error) {
+            console.error('Receipt scan error:', error);
+            setScanError('Failed to scan receipt. Please try again or enter manually.');
+        } finally {
+            setScanning(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleScanReceipt(file);
+        }
+        // Reset input so same file can be selected again
+        e.target.value = '';
+    };
 
     useEffect(() => {
         if (!formData.description || formData.description.length < 3) {
@@ -97,6 +178,52 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Scan Receipt Button */}
+            <div className="mb-4">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    aria-hidden="true"
+                />
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={scanning}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm font-medium hover:border-cyan-500/50 transition-all disabled:opacity-50"
+                >
+                    {scanning ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Scanning receipt...
+                        </>
+                    ) : (
+                        <>
+                            <Camera className="w-5 h-5" />
+                            📸 Scan Receipt
+                        </>
+                    )}
+                </button>
+                {scanError && (
+                    <p className="mt-2 text-xs text-red-400">{scanError}</p>
+                )}
+                {scanSuccess && (
+                    <p className="mt-2 text-xs text-emerald-400">✓ Receipt scanned! Review the details below.</p>
+                )}
+            </div>
+
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#262626]"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-[#171717] text-[#52525b]">or enter manually</span>
+                </div>
+            </div>
+
             {/* Amount */}
             <div>
                 <label htmlFor="amount" className={labelClass}>Amount *</label>

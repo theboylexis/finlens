@@ -157,6 +157,65 @@ async def create_expense(
     return dict(row)
 
 
+# ============================================================================
+# Receipt Scanning
+# ============================================================================
+
+from pydantic import BaseModel, Field
+from services.gemini_client import get_gemini_client
+
+
+class ReceiptScanRequest(BaseModel):
+    """Request model for scanning a receipt."""
+    image_base64: str = Field(..., description="Base64 encoded receipt image")
+
+
+class ReceiptScanResponse(BaseModel):
+    """Response model for scanned receipt data."""
+    amount: float = Field(..., description="Extracted amount")
+    description: str = Field(..., description="Merchant/store name")
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    category: str = Field(..., description="Suggested category")
+    confidence: float = Field(..., description="Extraction confidence 0-1")
+    raw_text: str = Field(default="", description="Raw text from receipt")
+    error: Optional[str] = Field(default=None, description="Error message if any")
+
+
+@router.post("/scan-receipt", response_model=ReceiptScanResponse)
+async def scan_receipt(
+    request: ReceiptScanRequest,
+    user: dict = Depends(require_auth)
+):
+    """
+    Scan a receipt image and extract expense data using AI.
+    
+    Accepts a base64-encoded image and returns extracted:
+    - Amount (total)
+    - Description (merchant name)
+    - Date
+    - Suggested category
+    - Confidence score
+    """
+    try:
+        gemini_client = get_gemini_client()
+        result = await gemini_client.extract_receipt_data(request.image_base64)
+        
+        return ReceiptScanResponse(
+            amount=float(result.get("amount", 0)),
+            description=str(result.get("description", "Receipt scan")),
+            date=str(result.get("date", date.today().isoformat())),
+            category=str(result.get("category", "Other")),
+            confidence=float(result.get("confidence", 0.5)),
+            raw_text=str(result.get("raw_text", "")),
+            error=result.get("error")
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to scan receipt: {str(e)}"
+        )
+
+
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_expenses(
     skip: int = 0,

@@ -125,6 +125,89 @@ class GeminiClient:
             print(f"❌ Gemini AI error: {e}")
             raise
 
+    async def extract_receipt_data(self, image_base64: str) -> dict:
+        """
+        Extract expense data from a receipt image using Gemini Vision.
+        
+        Args:
+            image_base64: Base64 encoded image data
+            
+        Returns:
+            Dictionary with extracted data: amount, description, date, category
+        """
+        import json
+        import base64
+        from datetime import date
+        
+        try:
+            # Create the image part for Gemini
+            image_data = base64.b64decode(image_base64)
+            
+            # Prepare the prompt for receipt extraction
+            prompt = """Analyze this receipt image and extract the following information.
+Return a JSON object with these fields:
+- amount: The total amount paid (as a number, no currency symbols)
+- description: The merchant/store name or a brief description of the purchase
+- date: The date on the receipt in YYYY-MM-DD format (if not visible, use today's date)
+- category: Suggest one of these categories based on the purchase:
+  "Food & Dining", "Transportation", "Shopping", "Entertainment", 
+  "Bills & Utilities", "Health", "Travel", "Education", "Other"
+- confidence: How confident you are in the extraction (0.0 to 1.0)
+- raw_text: Any relevant text you can read from the receipt
+
+If you cannot read certain fields clearly, make your best guess and lower the confidence.
+Respond with valid JSON only, no markdown formatting."""
+
+            # Use Gemini with the image
+            model = genai.GenerativeModel(
+                model_name=AI_MODEL,
+                generation_config={"temperature": 0.1, "max_output_tokens": 1000},
+            )
+            
+            # Create content with image
+            response = model.generate_content([
+                prompt,
+                {
+                    "mime_type": "image/jpeg",
+                    "data": image_data
+                }
+            ])
+            
+            response_text = response.text.strip()
+            
+            # Remove markdown code blocks if present
+            if response_text.startswith("```"):
+                lines = response_text.split("\n")
+                response_text = "\n".join(lines[1:-1])
+            
+            result = json.loads(response_text)
+            
+            # Ensure required fields exist with defaults
+            result.setdefault("amount", 0.0)
+            result.setdefault("description", "Receipt scan")
+            result.setdefault("date", str(date.today()))
+            result.setdefault("category", "Other")
+            result.setdefault("confidence", 0.5)
+            result.setdefault("raw_text", "")
+            
+            return result
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ Failed to parse receipt JSON: {e}")
+            # Return default values on parse failure
+            return {
+                "amount": 0.0,
+                "description": "Receipt scan",
+                "date": str(date.today()),
+                "category": "Other",
+                "confidence": 0.0,
+                "raw_text": "",
+                "error": "Could not parse receipt data"
+            }
+        except Exception as e:
+            print(f"❌ Receipt extraction error: {e}")
+            raise
+
 
 # Global Gemini client instance
 _gemini_client: Optional[GeminiClient] = None
