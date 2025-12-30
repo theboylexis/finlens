@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Target, Plane, Car, Home, Laptop, BookOpen, Briefcase, Heart, GraduationCap, Dumbbell } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getAuthHeaders } from '@/lib/api';
 
 interface AddGoalModalProps {
     onClose: () => void;
@@ -38,7 +38,7 @@ export default function AddGoalModal({ onClose, onSuccess }: AddGoalModalProps) 
         try {
             const response = await fetch(`${API_URL}/api/goals/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({
                     name: name.trim(),
                     target_amount: parseFloat(targetAmount),
