@@ -24,9 +24,9 @@ security = HTTPBearer(auto_error=False)
 
 
 def build_user_filter(user: Optional[dict]) -> tuple[str, list]:
-    """Build SQL filter for user-specific or legacy data."""
+    """Build SQL filter for user-specific data."""
     if user:
-        return "(user_id = ? OR user_id IS NULL)", [user["id"]]
+        return "user_id = ?", [user["id"]]
     return "1=1", []
 
 

@@ -69,7 +69,7 @@ async def list_goals(
     params = []
     
     if current_user:
-        base_query += " AND (user_id = ? OR user_id IS NULL)"
+        base_query += " AND user_id = ?"
         params.append(current_user["id"])
     
     if not include_completed:
