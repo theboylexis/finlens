@@ -13,17 +13,43 @@ import NudgeCard from '@/components/NudgeCard';
 import StreakCard from '@/components/StreakCard';
 import { Plus, X, Zap, ClipboardList, Shield } from 'lucide-react';
 
+import { API_URL, getAuthHeaders } from '@/lib/api';
+
 export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    // Check if onboarding has been completed
-    const onboardingComplete = localStorage.getItem('finlens_onboarding_complete');
-    if (!onboardingComplete) {
-      setShowOnboarding(true);
-    }
+    // Check if user is new (no expenses) - show onboarding for truly new users
+    const checkNewUser = async () => {
+      const onboardingComplete = localStorage.getItem('finlens_onboarding_complete');
+
+      // If localStorage says complete, skip the API check
+      if (onboardingComplete) {
+        return;
+      }
+
+      try {
+        // Check if user has any expenses
+        const response = await fetch(`${API_URL}/api/expenses/?limit=1`, {
+          headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+          const expenses = await response.json();
+          // Show onboarding if user has no expenses
+          if (expenses.length === 0) {
+            setShowOnboarding(true);
+          }
+        }
+      } catch (error) {
+        // If API fails, show onboarding anyway for new users
+        setShowOnboarding(true);
+      }
+    };
+
+    checkNewUser();
 
     // Listen for empty state button click
     const handleOpenForm = () => setShowForm(true);
