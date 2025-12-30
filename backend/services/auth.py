@@ -1,15 +1,13 @@
 """
 Authentication service using JWT tokens.
+PostgreSQL-only implementation.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Any
 import hashlib
 import secrets
 import jwt
-import aiosqlite
-
-# Configuration - In production, use environment variables!
 import os
 
 # Configuration - In production, use environment variables!
@@ -54,7 +52,7 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-async def get_user_by_email(db: aiosqlite.Connection, email: str) -> Optional[dict]:
+async def get_user_by_email(db: Any, email: str) -> Optional[dict]:
     """Get user by email."""
     cursor = await db.execute(
         "SELECT * FROM users WHERE email = ?",
@@ -64,7 +62,7 @@ async def get_user_by_email(db: aiosqlite.Connection, email: str) -> Optional[di
     return dict(row) if row else None
 
 
-async def get_user_by_id(db: aiosqlite.Connection, user_id: int) -> Optional[dict]:
+async def get_user_by_id(db: Any, user_id: int) -> Optional[dict]:
     """Get user by ID."""
     cursor = await db.execute(
         "SELECT * FROM users WHERE id = ?",
@@ -74,7 +72,7 @@ async def get_user_by_id(db: aiosqlite.Connection, user_id: int) -> Optional[dic
     return dict(row) if row else None
 
 
-async def create_user(db: aiosqlite.Connection, email: str, password: str, name: str) -> dict:
+async def create_user(db: Any, email: str, password: str, name: str) -> dict:
     """Create a new user."""
     password_hash = hash_password(password)
     
@@ -91,7 +89,7 @@ async def create_user(db: aiosqlite.Connection, email: str, password: str, name:
     return await get_user_by_id(db, user_id)
 
 
-async def authenticate_user(db: aiosqlite.Connection, email: str, password: str) -> Optional[dict]:
+async def authenticate_user(db: Any, email: str, password: str) -> Optional[dict]:
     """Authenticate a user with email and password."""
     user = await get_user_by_email(db, email)
     if not user:

@@ -1,0 +1,23 @@
+# Docker Compose for local FinLens AI development
+# Provides PostgreSQL database for local development
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: finlens-db
+    environment:
+      POSTGRES_USER: finlens
+      POSTGRES_PASSWORD: finlens123
+      POSTGRES_DB: finlens
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U finlens" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

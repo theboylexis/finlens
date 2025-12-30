@@ -1,14 +1,15 @@
 """
 Query routes for FinLens AI.
 Natural language query interface with SQL template security.
+PostgreSQL-only implementation.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-import aiosqlite
 
 from database import get_db
 from models import NLQueryRequest, NLQueryResponse
 from services.query_engine import get_query_engine
+from dependencies import require_auth
 
 router = APIRouter()
 
@@ -16,7 +17,8 @@ router = APIRouter()
 @router.post("/ask", response_model=NLQueryResponse)
 async def ask_query(
     request: NLQueryRequest,
-    db: aiosqlite.Connection = Depends(get_db)
+    db = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """
     Process natural language query about expenses.
@@ -34,9 +36,10 @@ async def ask_query(
         )
     
     query_engine = get_query_engine()
+    user_id = user["id"]
     
     try:
-        response = await query_engine.process_query(request.query, db)
+        response = await query_engine.process_query(request.query, db, user_id)
         return response
     except Exception as e:
         raise HTTPException(

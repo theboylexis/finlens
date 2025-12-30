@@ -1,16 +1,21 @@
+"""
+FastAPI dependencies for authentication.
+PostgreSQL-only implementation.
+"""
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
-import aiosqlite
+from typing import Optional, Any
 
 from database import get_db
 from services.auth import decode_token, get_user_by_id
 
 security = HTTPBearer(auto_error=False)
 
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    db: aiosqlite.Connection = Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> Optional[dict]:
     """Get current user from JWT token. Returns None if not authenticated."""
     if not credentials:
@@ -32,7 +37,7 @@ async def get_current_user(
 
 async def require_auth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: aiosqlite.Connection = Depends(get_db)
+    db: Any = Depends(get_db)
 ) -> dict:
     """Require authentication. Raises 401 if not authenticated."""
     if not credentials:
