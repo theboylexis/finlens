@@ -17,7 +17,7 @@ from models import (
     BudgetStatus,
     SafeToSpendResponse,
 )
-from dependencies import get_current_user
+from dependencies import require_auth
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
@@ -35,7 +35,7 @@ async def get_analytics_summary(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get overall analytics summary for a date range."""
     if not end_date:
@@ -96,7 +96,7 @@ async def get_spending_by_category(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get spending aggregated by category."""
     if not end_date:
@@ -150,7 +150,7 @@ async def get_spending_trends(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get daily spending trends over time."""
     if not end_date:
@@ -185,7 +185,7 @@ async def get_spending_heatmap(
     year: int = Query(default=None),
     month: int = Query(default=None),
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get spending heatmap data for calendar visualization."""
     if not year or not month:
@@ -231,7 +231,7 @@ async def get_budget_status(
     month: Optional[int] = None,
     year: Optional[int] = None,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get budget status for all categories."""
     if not year or not month:
@@ -294,7 +294,7 @@ async def get_budget_status(
 @router.get("/safe-to-spend", response_model=SafeToSpendResponse)
 async def get_safe_to_spend(
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """
     Calculate the safe amount to spend today.
@@ -469,7 +469,7 @@ async def get_safe_to_spend(
 @router.get("/weekly-summary")
 async def get_weekly_summary(
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """
     Get spending summary for this week vs last week.

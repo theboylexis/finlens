@@ -14,7 +14,7 @@ from models import (
     SubscriptionUpdate,
     SubscriptionResponse,
 )
-from dependencies import get_current_user
+from dependencies import require_auth
 
 router = APIRouter()
 
@@ -47,7 +47,7 @@ def build_user_filter(user: Optional[dict]) -> tuple[str, list]:
 async def get_subscriptions(
     active_only: bool = True,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get all subscriptions."""
     user_filter, user_params = build_user_filter(user)
@@ -83,7 +83,7 @@ async def get_subscriptions(
 async def get_upcoming_renewals(
     days: int = 7,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get subscriptions renewing within specified days."""
     user_filter, user_params = build_user_filter(user)
@@ -121,7 +121,7 @@ async def get_upcoming_renewals(
 @router.get("/summary")
 async def get_subscriptions_summary(
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Get subscription spending summary."""
     user_filter, user_params = build_user_filter(user)
@@ -154,10 +154,10 @@ async def get_subscriptions_summary(
 async def create_subscription(
     subscription: SubscriptionCreate,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Create a new subscription."""
-    user_id = user["id"] if user else None
+    user_id = user["id"]
     
     cursor = await db.execute(
         """
@@ -201,7 +201,7 @@ async def update_subscription(
     subscription_id: int,
     subscription: SubscriptionUpdate,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Update an existing subscription."""
     # Build update query dynamically
@@ -270,7 +270,7 @@ async def update_subscription(
 async def delete_subscription(
     subscription_id: int,
     db: aiosqlite.Connection = Depends(get_db),
-    user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Delete a subscription."""
     cursor = await db.execute(

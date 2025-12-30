@@ -9,7 +9,7 @@ import aiosqlite
 
 from database import get_db
 from models import GoalCreate, GoalUpdate, GoalResponse, ContributionCreate, ContributionResponse
-from dependencies import get_current_user
+from dependencies import require_auth
 
 router = APIRouter()
 
@@ -62,15 +62,11 @@ def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
 async def list_goals(
     include_completed: bool = False,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
-    """List all savings goals."""
-    base_query = "SELECT * FROM savings_goals WHERE 1=1"
-    params = []
-    
-    if current_user:
-        base_query += " AND user_id = ?"
-        params.append(current_user["id"])
+    """List all savings goals for current user."""
+    base_query = "SELECT * FROM savings_goals WHERE user_id = ?"
+    params = [user["id"]]
     
     if not include_completed:
         base_query += " AND is_completed = FALSE"
@@ -86,16 +82,15 @@ async def list_goals(
 async def create_goal(
     goal: GoalCreate,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """Create a new savings goal."""
-    user_id = current_user["id"] if current_user else None
     cursor = await db.execute(
         """
         INSERT INTO savings_goals (user_id, name, target_amount, target_date, icon, color)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user_id, goal.name, goal.target_amount, goal.target_date, goal.icon, goal.color)
+        (user["id"], goal.name, goal.target_amount, goal.target_date, goal.icon, goal.color)
     )
     await db.commit()
     

@@ -19,7 +19,7 @@ from models import (
 )
 from services.categorizer import get_categorizer
 from services.alerts import check_and_create_budget_alerts
-from dependencies import get_current_user
+from dependencies import require_auth
 from calendar import monthrange
 
 router = APIRouter()
@@ -29,7 +29,7 @@ router = APIRouter()
 async def create_expense(
     expense: ExpenseCreate,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """
     Create a new expense with AI categorization.
@@ -81,7 +81,7 @@ async def create_expense(
         )
     
     # Insert expense
-    user_id = current_user["id"] if current_user else None
+    user_id = user["id"]
     cursor = await db.execute(
         """
         INSERT INTO expenses (
@@ -165,7 +165,7 @@ async def get_expenses(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """
     Get expenses with optional filtering.
@@ -182,9 +182,9 @@ async def get_expenses(
     params = []
     
     # Filter by user if authenticated
-    if current_user:
-        query += " AND user_id = ?"
-        params.append(current_user["id"])
+    # Filter by current user
+    query += " AND user_id = ?"
+    params.append(user["id"])
     
     if category:
         query += " AND category = ?"
@@ -210,7 +210,7 @@ async def get_expenses(
 @router.get("/weekly-summary")
 async def get_weekly_summary(
     db: aiosqlite.Connection = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_current_user)
+    user: dict = Depends(require_auth)
 ):
     """
     Get weekly spending summary for the past 8 weeks.
@@ -233,9 +233,8 @@ async def get_weekly_summary(
         """
         params = [week_start, week_end]
         
-        if current_user:
-            query += " AND user_id = ?"
-            params.append(current_user["id"])
+        query += " AND user_id = ?"
+        params.append(user["id"])
         
         cursor = await db.execute(query, params)
         row = await cursor.fetchone()
