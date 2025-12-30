@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { Bot, X, Send, Sparkles, MessageCircle } from 'lucide-react';
 import { getAuthHeaders, API_URL } from '@/lib/api';
@@ -17,11 +17,46 @@ interface QueryResponse {
     confidence: number;
 }
 
-const QUICK_PROMPTS = [
-    "Am I over budget?",
-    "Total spent this week?",
-    "Top 5 expenses",
-];
+// Context-aware prompts for each page
+const PAGE_PROMPTS: Record<string, string[]> = {
+    '/': [  // Dashboard
+        "Am I over budget?",
+        "Total spent this week?",
+        "My top expenses",
+    ],
+    '/expenses': [
+        "What did I spend most on?",
+        "Total food spending?",
+        "Biggest expense this month?",
+    ],
+    '/goals': [
+        "How close to my goals?",
+        "Total saved this month?",
+        "Am I on track?",
+    ],
+    '/budgets': [
+        "Which budgets are low?",
+        "Am I over budget?",
+        "Budget breakdown",
+    ],
+    '/income': [
+        "Total income this month?",
+        "Income vs expenses?",
+        "How much can I save?",
+    ],
+    '/subscriptions': [
+        "Monthly subscriptions total?",
+        "Upcoming renewals?",
+        "Annual subscription cost?",
+    ],
+    '/splits': [
+        "Who owes me money?",
+        "Total owed to friends?",
+        "Pending settlements?",
+    ],
+};
+
+const DEFAULT_PROMPTS = ["Am I over budget?", "Total spent this week?", "Top 5 expenses"];
 
 export default function FloatingAIChat() {
     const [mounted, setMounted] = useState(false);
@@ -36,6 +71,11 @@ export default function FloatingAIChat() {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Get context-aware prompts based on current page
+    const quickPrompts = useMemo(() => {
+        return PAGE_PROMPTS[pathname] || DEFAULT_PROMPTS;
+    }, [pathname]);
 
     // Hide on Analytics page (it has its own embedded AI query)
     const isAnalyticsPage = pathname === '/analytics';
@@ -118,7 +158,7 @@ export default function FloatingAIChat() {
                             <div className="mb-4">
                                 <p className="text-xs text-[#71717a] mb-2">Quick questions:</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {QUICK_PROMPTS.map((prompt, i) => (
+                                    {quickPrompts.map((prompt: string, i: number) => (
                                         <button
                                             key={i}
                                             onClick={() => handleQuickPrompt(prompt)}
