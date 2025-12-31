@@ -360,3 +360,13 @@ export async function getIncomeSummary(month?: number, year?: number): Promise<I
   return response.json();
 }
 
+// Account API
+export async function deleteAccount(): Promise<void> {
+  const response = await apiFetch('/api/auth/account', {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || 'Failed to delete account');
+  }
+}

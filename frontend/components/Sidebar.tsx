@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { deleteAccount } from '@/lib/api';
+import DeleteAccountModal from './DeleteAccountModal';
 import {
     LayoutDashboard,
     BarChart3,
@@ -13,7 +15,9 @@ import {
     LogOut,
     Wallet,
     Menu,
-    X
+    X,
+    ChevronDown,
+    Trash2
 } from 'lucide-react';
 
 const navigation = [
@@ -27,10 +31,31 @@ const navigation = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { user, logout } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
 
     const closeMobileMenu = () => setMobileMenuOpen(false);
+
+    // Close user menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setUserMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleDeleteAccount = async () => {
+        await deleteAccount();
+        logout();
+        router.push('/login');
+    };
 
     return (
         <>
@@ -99,21 +124,49 @@ export default function Sidebar() {
                 {/* User Section - Always show at bottom */}
                 <div className="p-3 border-t border-[#262626] mt-auto">
                     {user ? (
-                        <div className="flex items-center gap-3 px-2 py-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black text-sm font-bold shrink-0">
-                                {user.name?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                                <p className="text-xs text-[#52525b] truncate">{user.email}</p>
-                            </div>
+                        <div className="relative" ref={userMenuRef}>
+                            {/* User Button - Opens dropdown */}
                             <button
-                                onClick={() => { logout(); closeMobileMenu(); }}
-                                className="p-1.5 text-[#52525b] hover:text-red-400 transition-colors rounded shrink-0"
-                                title="Sign out"
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1a1a1a] transition-colors"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black text-sm font-bold shrink-0">
+                                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0 text-left">
+                                    <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                                    <p className="text-xs text-[#52525b] truncate">{user.email}</p>
+                                </div>
+                                <ChevronDown className={`w-4 h-4 text-[#52525b] transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                             </button>
+
+                            {/* User Dropdown Menu */}
+                            {userMenuOpen && (
+                                <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#171717] border border-[#262626] rounded-lg shadow-xl overflow-hidden">
+                                    <button
+                                        onClick={() => {
+                                            setUserMenuOpen(false);
+                                            logout();
+                                            closeMobileMenu();
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-[#a1a1aa] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Sign out
+                                    </button>
+                                    <div className="border-t border-[#262626]" />
+                                    <button
+                                        onClick={() => {
+                                            setUserMenuOpen(false);
+                                            setDeleteModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete Account
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <Link
@@ -126,6 +179,15 @@ export default function Sidebar() {
                     )}
                 </div>
             </aside>
+
+            {/* Delete Account Modal */}
+            <DeleteAccountModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={handleDeleteAccount}
+                userName={user?.email || ''}
+            />
         </>
     );
 }
+

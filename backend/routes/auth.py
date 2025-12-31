@@ -157,3 +157,24 @@ async def get_me(user: dict = Depends(require_auth)):
 async def verify_token(user: dict = Depends(require_auth)):
     """Verify that token is valid."""
     return {"valid": True, "user_id": user["id"]}
+
+
+@router.delete("/account", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(
+    user: dict = Depends(require_auth),
+    db: aiosqlite.Connection = Depends(get_db)
+):
+    """
+    Delete the current user's account and all associated data.
+    
+    This action is irreversible. All user data including expenses, budgets,
+    goals, subscriptions, income records, and alerts will be permanently deleted.
+    """
+    user_id = user["id"]
+    
+    # Delete the user - CASCADE will handle all related data
+    await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    await db.commit()
+    
+    # Return 204 No Content on success
+    return None
