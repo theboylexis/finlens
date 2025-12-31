@@ -127,7 +127,7 @@ class GeminiClient:
 
     async def extract_receipt_data(self, image_base64: str) -> dict:
         """
-        Extract expense data from a receipt image using Gemini Vision.
+        Extract expense data from a receipt/bill image using Gemini Vision.
         
         Args:
             image_base64: Base64 encoded image data
@@ -143,17 +143,35 @@ class GeminiClient:
             # Create the image part for Gemini
             image_data = base64.b64decode(image_base64)
             
-            # Prepare the prompt for receipt extraction
-            prompt = """Analyze this receipt image and extract the following information.
+            # Detect MIME type from image header bytes
+            mime_type = "image/jpeg"  # default
+            if image_data[:8] == b'\x89PNG\r\n\x1a\n':
+                mime_type = "image/png"
+            elif image_data[:2] == b'\xff\xd8':
+                mime_type = "image/jpeg"
+            elif image_data[:4] == b'GIF8':
+                mime_type = "image/gif"
+            elif image_data[:4] == b'RIFF' and image_data[8:12] == b'WEBP':
+                mime_type = "image/webp"
+            
+            print(f"📸 Detected image MIME type: {mime_type}")
+            
+            # Prepare the prompt for receipt/bill extraction
+            # Updated to handle various document types including utility bills
+            prompt = """Analyze this image of a receipt, invoice, bill, or statement and extract the following information.
+
+This could be a store receipt, restaurant bill, utility bill (electricity, water, gas), subscription invoice, or any other payment document.
+
 Return a JSON object with these fields:
-- amount: The total amount paid (as a number, no currency symbols)
-- description: The merchant/store name or a brief description of the purchase
-- date: The date on the receipt in YYYY-MM-DD format (if not visible, use today's date)
-- category: Suggest one of these categories based on the purchase:
+- amount: The TOTAL amount due or paid (as a number, no currency symbols). For utility bills, use the "Total Due", "Amount Due", or "Total Payable" amount.
+- description: The company/merchant name or a brief description (e.g., "ECG Electricity Bill", "Vodafone Bill", "Shoprite")
+- date: The date on the document in YYYY-MM-DD format. For bills, use the billing date or due date. If not visible, use today's date.
+- category: Suggest one of these categories based on the document type:
   "Food & Dining", "Transportation", "Shopping", "Entertainment", 
   "Bills & Utilities", "Health", "Travel", "Education", "Other"
+  Note: Electricity, water, gas, internet, phone bills should be "Bills & Utilities"
 - confidence: How confident you are in the extraction (0.0 to 1.0)
-- raw_text: Any relevant text you can read from the receipt
+- raw_text: Key text you can read from the document (account number, meter reading, etc.)
 
 If you cannot read certain fields clearly, make your best guess and lower the confidence.
 Respond with valid JSON only, no markdown formatting."""
@@ -164,11 +182,11 @@ Respond with valid JSON only, no markdown formatting."""
                 generation_config={"temperature": 0.1, "max_output_tokens": 1000},
             )
             
-            # Create content with image
+            # Create content with image using detected MIME type
             response = model.generate_content([
                 prompt,
                 {
-                    "mime_type": "image/jpeg",
+                    "mime_type": mime_type,
                     "data": image_data
                 }
             ])
