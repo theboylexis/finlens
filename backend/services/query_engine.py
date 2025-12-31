@@ -568,17 +568,22 @@ Respond with JSON:
         template_key: str
     ) -> str:
         """Generate natural language explanation of results."""
+        
+        # Try to generate a smart fallback first in case Gemini fails
+        fallback = self._generate_fallback_explanation(results, template_key)
+        
         system_instruction = f"""You are a financial assistant explaining query results.
 Be concise, clear, and helpful. Focus on insights, not just restating data.
-Keep explanations under 2 sentences.
-IMPORTANT: Always use {CURRENCY_CODE} ({CURRENCY_SYMBOL}) as the currency. Never use dollars ($) or any other currency."""
+Keep explanations to 1-2 sentences maximum.
+IMPORTANT: Always use {CURRENCY_CODE} ({CURRENCY_SYMBOL}) as the currency. Never use dollars ($) or any other currency.
+If there's no data, say so helpfully."""
         
         prompt = f"""
 Query: "{query}"
-Template used: {template_key}
-Results: {results[:5]}  # First 5 results
+Template: {template_key}
+Data: {results[:5]}
 
-Explain these results in plain English.
+Explain these financial results in plain English. Be specific with numbers.
 """
         
         try:
@@ -586,9 +591,110 @@ Explain these results in plain English.
                 prompt=prompt,
                 system_instruction=system_instruction
             )
+            # If Gemini returns something too generic or short, use fallback
+            if len(explanation) < 20 or "result" in explanation.lower():
+                return fallback
             return explanation
         except Exception:
-            return f"Found {len(results)} results for your query."
+            return fallback
+    
+    def _generate_fallback_explanation(
+        self,
+        results: List[Dict[str, Any]],
+        template_key: str
+    ) -> str:
+        """Generate template-specific fallback explanations."""
+        if not results:
+            return "No data found for this query. Try adding some records first!"
+        
+        row = results[0]  # First result
+        
+        # Template-specific explanations
+        if template_key == "savings_potential":
+            income = float(row.get("income", 0) or 0)
+            expenses = float(row.get("expenses", 0) or 0)
+            net = income - expenses
+            if net > 0:
+                return f"Based on {CURRENCY_SYMBOL}{income:,.2f} income and {CURRENCY_SYMBOL}{expenses:,.2f} expenses, you could save {CURRENCY_SYMBOL}{net:,.2f} this month."
+            elif net < 0:
+                return f"You're spending {CURRENCY_SYMBOL}{abs(net):,.2f} more than you earn. Consider reducing expenses."
+            else:
+                return "Your income and expenses are balanced. No extra savings available."
+        
+        elif template_key == "income_total":
+            total = float(row.get("total_income", 0) or 0)
+            count = int(row.get("income_count", 0) or 0)
+            return f"Total income: {CURRENCY_SYMBOL}{total:,.2f} from {count} source(s)."
+        
+        elif template_key == "income_vs_expenses":
+            income = float(row.get("income", 0) or 0)
+            expenses = float(row.get("expenses", 0) or 0)
+            net = float(row.get("net", 0) or 0)
+            status = "surplus" if net >= 0 else "deficit"
+            return f"Income: {CURRENCY_SYMBOL}{income:,.2f}, Expenses: {CURRENCY_SYMBOL}{expenses:,.2f}. Net {status}: {CURRENCY_SYMBOL}{abs(net):,.2f}."
+        
+        elif template_key == "goals_progress":
+            goals_info = []
+            for g in results[:3]:
+                name = g.get("name", "Goal")
+                progress = float(g.get("progress_percent", 0) or 0)
+                goals_info.append(f"{name}: {progress:.0f}%")
+            return "Goal progress: " + ", ".join(goals_info) if goals_info else "No active goals found."
+        
+        elif template_key == "goals_on_track":
+            statuses = [f"{r.get('name')}: {r.get('status')}" for r in results[:3]]
+            return "Goal status: " + ", ".join(statuses) if statuses else "No active goals."
+        
+        elif template_key == "goals_total_saved":
+            total = float(row.get("total_saved", 0) or 0)
+            return f"You've saved {CURRENCY_SYMBOL}{total:,.2f} towards your goals this period."
+        
+        elif template_key == "subscriptions_monthly_total":
+            total = float(row.get("monthly_total", 0) or 0)
+            count = int(row.get("subscription_count", 0) or 0)
+            return f"Your {count} active subscription(s) cost {CURRENCY_SYMBOL}{total:,.2f}/month."
+        
+        elif template_key == "subscriptions_annual_cost":
+            total = float(row.get("annual_total", 0) or 0)
+            return f"Your subscriptions will cost approximately {CURRENCY_SYMBOL}{total:,.2f} per year."
+        
+        elif template_key == "subscriptions_upcoming":
+            if results:
+                upcoming = [f"{r.get('name')} in {r.get('days_until')} days" for r in results[:3]]
+                return "Upcoming renewals: " + ", ".join(upcoming)
+            return "No upcoming subscription renewals in the next 30 days."
+        
+        elif template_key == "splits_owed_to_me":
+            if results:
+                owes = [f"{r.get('friend_name')}: {CURRENCY_SYMBOL}{float(r.get('amount_owed', 0)):,.2f}" for r in results[:3]]
+                return "Friends who owe you: " + ", ".join(owes)
+            return "No one owes you money right now."
+        
+        elif template_key == "splits_total_pending":
+            total = float(row.get("total_pending", 0) or 0)
+            count = int(row.get("split_count", 0) or 0)
+            return f"You have {CURRENCY_SYMBOL}{total:,.2f} pending across {count} split(s)."
+        
+        elif template_key == "total_in_period":
+            total = float(row.get("total", 0) or 0)
+            return f"Total spending: {CURRENCY_SYMBOL}{total:,.2f}."
+        
+        elif template_key == "highest_expenses":
+            if results:
+                top = results[0]
+                return f"Your biggest expense: {top.get('description', 'Unknown')} at {CURRENCY_SYMBOL}{float(top.get('amount', 0)):,.2f} ({top.get('category', 'Other')})."
+            return "No expenses found in this period."
+        
+        elif template_key == "budget_check":
+            over_budget = [r for r in results if float(r.get("remaining", 0) or 0) < 0]
+            if over_budget:
+                categories = ", ".join([r.get("category", "Unknown") for r in over_budget[:3]])
+                return f"You're over budget in: {categories}."
+            return "All budgets are on track!"
+        
+        # Default fallback
+        return f"Found {len(results)} result(s) for your query."
+
     
     async def process_query(
         self,
