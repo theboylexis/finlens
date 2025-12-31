@@ -75,10 +75,17 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to scan receipt');
+                const errorData = await response.json().catch(() => ({}));
+                const errorMsg = errorData.detail || `Server error: ${response.status}`;
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
+
+            // Check if there was an extraction error
+            if (data.error) {
+                throw new Error(data.error);
+            }
 
             // Auto-fill form with extracted data
             setFormData({
@@ -99,9 +106,10 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
             }
 
             setScanSuccess(true);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Receipt scan error:', error);
-            setScanError('Failed to scan receipt. Please try again or enter manually.');
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            setScanError(`Scan failed: ${errorMessage}`);
         } finally {
             setScanning(false);
         }

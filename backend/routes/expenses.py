@@ -197,8 +197,13 @@ async def scan_receipt(
     - Confidence score
     """
     try:
+        print(f"📸 Receipt scan requested by user {user.get('id', 'unknown')}")
+        print(f"📸 Image data length: {len(request.image_base64)} characters")
+        
         gemini_client = get_gemini_client()
         result = await gemini_client.extract_receipt_data(request.image_base64)
+        
+        print(f"✅ Receipt scan result: amount={result.get('amount')}, desc={result.get('description')}, category={result.get('category')}")
         
         return ReceiptScanResponse(
             amount=float(result.get("amount", 0)),
@@ -210,6 +215,9 @@ async def scan_receipt(
             error=result.get("error")
         )
     except Exception as e:
+        import traceback
+        print(f"❌ Receipt scan error: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to scan receipt: {str(e)}"
