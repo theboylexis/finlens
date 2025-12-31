@@ -366,8 +366,23 @@ Respond with JSON:
                     "template": "goals_progress",
                     "confidence": 0.75
                 }
+        # ========== SAVINGS PATTERNS (must be before income) ==========
+        elif any(word in query_lower for word in ["save", "savings", "afford", "left over", "leftover"]):
+            if "how much" in query_lower or "can i" in query_lower or "potential" in query_lower:
+                return {
+                    "template": "savings_potential",
+                    "time_period": "this month",
+                    "confidence": 0.8
+                }
+            else:
+                return {
+                    "template": "income_vs_expenses",
+                    "time_period": "this month",
+                    "confidence": 0.75
+                }
         
         # ========== INCOME PATTERNS ==========
+
         elif any(word in query_lower for word in ["income", "earn", "salary", "paycheck"]):
             if "vs" in query_lower or "versus" in query_lower or "compare" in query_lower:
                 return {
