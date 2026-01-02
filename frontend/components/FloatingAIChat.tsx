@@ -93,16 +93,31 @@ export default function FloatingAIChat() {
         setResponse(null);
 
         try {
+            // Add timeout of 30 seconds for longer AI responses
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
             const res = await fetch(`${API_URL}/api/queries/ask`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({ query }),
+                signal: controller.signal,
             });
-            if (!res.ok) throw new Error('Failed to process query');
+
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to process query');
+            }
             const data = await res.json();
             setResponse(data);
-        } catch {
-            setError('Failed to process query. Please try again.');
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') {
+                setError('Request timed out. Please try a simpler question.');
+            } else {
+                setError(err instanceof Error ? err.message : 'Failed to process query. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -203,8 +218,10 @@ export default function FloatingAIChat() {
                                     <div className="w-7 h-7 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
                                         <Bot className="w-4 h-4 text-white" />
                                     </div>
-                                    <div className="bg-[#1a1a1a] border border-[#262626] rounded-2xl rounded-tl-md p-3 max-w-[85%]">
-                                        <p className="text-sm text-white leading-relaxed">{response.explanation}</p>
+                                    <div className="bg-[#1a1a1a] border border-[#262626] rounded-2xl rounded-tl-md p-3 max-w-[85%] overflow-hidden">
+                                        <div className="text-sm text-white leading-relaxed whitespace-pre-wrap break-words">
+                                            {response.explanation}
+                                        </div>
                                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#262626]">
                                             <span className="text-[10px] text-[#52525b]">
                                                 {response.sql_template_used}

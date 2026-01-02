@@ -37,15 +37,30 @@ export default function NaturalLanguageQuery() {
         setResponse(null);
 
         try {
+            // Add timeout of 30 seconds for longer AI responses
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
             const res = await fetch(`${API_URL}/api/queries/ask`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({ query }),
+                signal: controller.signal,
             });
-            if (!res.ok) throw new Error('Failed to process query');
+
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to process query');
+            }
             setResponse(await res.json());
-        } catch {
-            setError('Failed to process query. Please try again.');
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') {
+                setError('Request timed out. Please try a simpler question.');
+            } else {
+                setError(err instanceof Error ? err.message : 'Failed to process query. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -108,8 +123,10 @@ export default function NaturalLanguageQuery() {
                     {/* Answer */}
                     <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
                         <div className="flex items-start gap-2">
-                            <Bot className="w-4 h-4 text-emerald-400 mt-0.5" />
-                            <p className="text-sm text-emerald-400">{response.explanation}</p>
+                            <Bot className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-emerald-400 whitespace-pre-wrap break-words">
+                                {response.explanation}
+                            </div>
                         </div>
                     </div>
 
