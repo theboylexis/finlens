@@ -130,24 +130,34 @@ export default function NaturalLanguageQuery() {
                         </div>
                     </div>
 
-                    {/* Metadata */}
-                    <div className="grid grid-cols-3 gap-2">
-                        <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
-                            <p className="text-xs text-[#52525b]">Template</p>
-                            <p className="text-xs text-white truncate">{response.sql_template_used}</p>
+                    {/* Metadata - only show for data queries */}
+                    {response.data?.count !== undefined && (
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
+                                <p className="text-xs text-[#52525b]">Template</p>
+                                <p className="text-xs text-white truncate">{response.sql_template_used}</p>
+                            </div>
+                            <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
+                                <p className="text-xs text-[#52525b]">Results</p>
+                                <p className="text-xs text-white">{response.data.count}</p>
+                            </div>
+                            <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
+                                <p className="text-xs text-[#52525b]">Confidence</p>
+                                <p className="text-xs text-white">{(response.confidence * 100).toFixed(0)}%</p>
+                            </div>
                         </div>
-                        <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
-                            <p className="text-xs text-[#52525b]">Results</p>
-                            <p className="text-xs text-white">{response.data.count}</p>
-                        </div>
-                        <div className="p-3 bg-[#0f0f0f] border border-[#262626] rounded-md">
-                            <p className="text-xs text-[#52525b]">Confidence</p>
-                            <p className="text-xs text-white">{(response.confidence * 100).toFixed(0)}%</p>
-                        </div>
-                    </div>
+                    )}
 
-                    {/* Results Table */}
-                    {response.data.results.length > 0 && (
+                    {/* Confidence for conversational queries */}
+                    {response.data?.count === undefined && (
+                        <div className="flex items-center gap-2 text-xs text-[#52525b]">
+                            <span>{response.sql_template_used}</span>
+                            <span className="text-emerald-500">{(response.confidence * 100).toFixed(0)}% confident</span>
+                        </div>
+                    )}
+
+                    {/* Results Table - only for data queries with results */}
+                    {response.data?.results && response.data.results.length > 0 && (
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs">
                                 <thead className="bg-[#0f0f0f]">
