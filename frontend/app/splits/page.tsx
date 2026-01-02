@@ -43,6 +43,8 @@ export default function SplitBillsPage() {
     const [addingFriend, setAddingFriend] = useState(false);
     const [deleteFriendId, setDeleteFriendId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [settleFriendId, setSettleFriendId] = useState<number | null>(null);
+    const [isSettling, setIsSettling] = useState(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -103,9 +105,18 @@ export default function SplitBillsPage() {
         }
     };
 
-    const handleSettleAll = async (friendId: number) => {
-        await fetch(`${API_URL}/api/splits/friends/${friendId}/settle-all`, { method: 'PATCH', headers: getAuthHeaders() });
-        fetchData();
+    const handleSettleAll = async () => {
+        if (!settleFriendId) return;
+        setIsSettling(true);
+        try {
+            await fetch(`${API_URL}/api/splits/friends/${settleFriendId}/settle-all`, { method: 'PATCH', headers: getAuthHeaders() });
+            setSettleFriendId(null);
+            fetchData();
+        } catch (error) {
+            console.error('Error settling:', error);
+        } finally {
+            setIsSettling(false);
+        }
     };
 
     const formatCurrency = (amount: number) => `GH₵${amount.toFixed(2)}`;
@@ -162,7 +173,7 @@ export default function SplitBillsPage() {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className="text-sm font-semibold text-emerald-400">{formatCurrency(b.total_owed)}</span>
-                                                <button onClick={() => handleSettleAll(b.friend_id)} className="px-2 py-1 text-xs bg-[#262626] hover:bg-[#333] text-white rounded transition-colors">
+                                                <button onClick={() => setSettleFriendId(b.friend_id)} className="px-2 py-1 text-xs bg-[#262626] hover:bg-[#333] text-white rounded transition-colors">
                                                     Settle
                                                 </button>
                                             </div>
@@ -203,7 +214,10 @@ export default function SplitBillsPage() {
 
             {/* Add Friend Modal */}
             {showAddFriend && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+                    onClick={(e) => e.target === e.currentTarget && setShowAddFriend(false)}
+                >
                     <div className="bg-[#171717] border border-[#262626] rounded-lg w-full max-w-sm p-4">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-sm font-medium text-white">Add Friend</h2>
@@ -233,6 +247,18 @@ export default function SplitBillsPage() {
                 isLoading={isDeleting}
                 confirmText="Delete"
                 type="danger"
+            />
+
+            {/* Settle Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!settleFriendId}
+                onClose={() => setSettleFriendId(null)}
+                onConfirm={handleSettleAll}
+                title="Settle All Balances"
+                message="Are you sure you want to mark all balances with this friend as settled? This action cannot be undone."
+                isLoading={isSettling}
+                confirmText="Settle All"
+                type="warning"
             />
         </AppLayout>
     );

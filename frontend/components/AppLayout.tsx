@@ -23,8 +23,8 @@ export default function AppLayout({ children, title, actions }: AppLayoutProps) 
                     </header>
                 )}
 
-                {/* Page Content */}
-                <div className="p-4 lg:p-6">
+                {/* Page Content with enter animation */}
+                <div className="p-4 lg:p-6 animate-page-enter">
                     {children}
                 </div>
             </main>

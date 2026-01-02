@@ -13,6 +13,7 @@ import {
     getAuthHeaders,
 } from '@/lib/api';
 import CategoryBadge from './CategoryBadge';
+import { useToast } from './Toast';
 
 interface ExpenseFormProps {
     onSuccess?: () => void;
@@ -39,6 +40,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const { showToast } = useToast();
 
     useEffect(() => {
         fetchCategories().then(setCategories).catch(console.error);
@@ -168,10 +170,12 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
             setFormData({ amount: 0, description: '', date: new Date().toISOString().split('T')[0], payment_method: '' });
             setSuggestion(null);
             setErrors({});
+            showToast('Expense added successfully!', 'success');
             if (onSuccess) onSuccess();
         } catch (error) {
             console.error('Failed to create expense:', error);
             setErrors({ submit: 'Failed to create expense. Please try again.' });
+            showToast('Failed to create expense', 'error');
         } finally {
             setLoading(false);
         }

@@ -6,6 +6,8 @@ import GoalCard from '@/components/GoalCard';
 import AddGoalModal from '@/components/AddGoalModal';
 import ContributeModal from '@/components/ContributeModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import EmptyState from '@/components/EmptyState';
+import { LoadingPage } from '@/components/LoadingSpinner';
 import { Plus, PartyPopper, Target, ChevronDown, ChevronRight } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
@@ -130,9 +132,7 @@ export default function GoalsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent"></div>
-        </div>
+        <LoadingPage message="Loading your goals..." />
       ) : error ? (
         <div className="text-center py-12">
           <p className="text-red-400 text-sm">{error}</p>
@@ -141,18 +141,13 @@ export default function GoalsPage() {
           </button>
         </div>
       ) : goals.length === 0 ? (
-        <div className="text-center py-16">
-          <Target className="w-12 h-12 text-[#52525b] mx-auto mb-4" />
-          <h2 className="text-lg font-medium text-white mb-2">No savings goals yet</h2>
-          <p className="text-sm text-[#52525b] mb-6">Create your first goal to get started</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-black font-medium rounded-md mx-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Create Goal
-          </button>
-        </div>
+        <EmptyState
+          icon={Target}
+          title="No savings goals yet"
+          description="Create your first goal to start tracking your savings progress!"
+          actionLabel="Create Goal"
+          onAction={() => setShowAddModal(true)}
+        />
       ) : (
         <div className="space-y-6">
           {activeGoals.length > 0 && (

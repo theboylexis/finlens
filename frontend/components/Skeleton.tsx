@@ -8,11 +8,11 @@ interface SkeletonProps {
     style?: React.CSSProperties;
 }
 
-// Base skeleton with shimmer effect
+// Base skeleton with shimmer effect - Dark Theme
 export function Skeleton({ className = '', style }: SkeletonProps) {
     return (
         <div
-            className={`animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] rounded ${className}`}
+            className={`animate-pulse bg-gradient-to-r from-[#262626] via-[#333] to-[#262626] bg-[length:200%_100%] rounded ${className}`}
             style={{
                 animation: 'shimmer 1.5s ease-in-out infinite',
                 ...style,
@@ -38,7 +38,7 @@ export function SkeletonText({ lines = 1, className = '' }: { lines?: number; cl
 // Card skeleton for expense items
 export function SkeletonExpenseCard() {
     return (
-        <div className="p-4 border border-gray-100 rounded-xl bg-white">
+        <div className="p-4 border border-[#262626] rounded-xl bg-[#171717]">
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3 flex-1">
                     {/* Category icon */}
@@ -69,7 +69,7 @@ export function SkeletonExpenseCard() {
 // Stats card skeleton
 export function SkeletonStatsCard() {
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-[#171717] rounded-xl p-6 border border-[#262626]">
             <div className="flex items-center justify-between mb-4">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="w-8 h-8 rounded-full" />

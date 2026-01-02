@@ -20,33 +20,33 @@ interface QueryResponse {
 // Context-aware prompts for each page
 const PAGE_PROMPTS: Record<string, string[]> = {
     '/': [  // Dashboard
+        "Create a budget plan for me",
         "Am I over budget?",
-        "Total spent this week?",
-        "My top expenses",
+        "Tips to save money",
     ],
     '/expenses': [
         "What did I spend most on?",
-        "Total food spending?",
+        "How can I reduce spending?",
         "Biggest expense this month?",
     ],
     '/goals': [
         "How close to my goals?",
-        "Total saved this month?",
+        "Best strategy to save faster",
         "Am I on track?",
     ],
     '/budgets': [
         "Which budgets are low?",
-        "Am I over budget?",
+        "Help me adjust my budgets",
         "Budget breakdown",
     ],
     '/income': [
         "Total income this month?",
-        "Income vs expenses?",
         "How much can I save?",
+        "Create a savings plan",
     ],
     '/subscriptions': [
         "Monthly subscriptions total?",
-        "Upcoming renewals?",
+        "Which subscriptions to cut?",
         "Annual subscription cost?",
     ],
     '/splits': [
@@ -56,7 +56,7 @@ const PAGE_PROMPTS: Record<string, string[]> = {
     ],
 };
 
-const DEFAULT_PROMPTS = ["Am I over budget?", "Total spent this week?", "Top 5 expenses"];
+const DEFAULT_PROMPTS = ["Create a budget plan", "Tips to save money", "Am I over budget?"];
 
 export default function FloatingAIChat() {
     const [mounted, setMounted] = useState(false);

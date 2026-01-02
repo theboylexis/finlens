@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import IncomeModal from '@/components/IncomeModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import EmptyState from '@/components/EmptyState';
+import { Skeleton } from '@/components/Skeleton';
 import { fetchIncome, getIncomeSummary, deleteIncome, Income, IncomeSummary } from '@/lib/api';
 import { Plus, Briefcase, Wallet, Laptop, Gift, GraduationCap, MoreHorizontal, Trash2, TrendingUp, LucideIcon } from 'lucide-react';
 
@@ -93,16 +95,13 @@ export default function IncomePage() {
                         ))}
                     </div>
                 ) : incomes.length === 0 ? (
-                    <div className="text-center py-8">
-                        <Wallet className="w-10 h-10 text-[#52525b] mx-auto mb-2" />
-                        <p className="text-sm text-[#52525b] mb-2">No income records yet</p>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="text-emerald-400 text-sm font-medium hover:underline"
-                        >
-                            Log your first income
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={Wallet}
+                        title="No income records yet"
+                        description="Track your income to see your full financial picture."
+                        actionLabel="Log First Income"
+                        onAction={() => setIsModalOpen(true)}
+                    />
                 ) : (
                     <div className="space-y-2">
                         {incomes.map((income) => (

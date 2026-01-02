@@ -3,6 +3,10 @@ Natural Language Query Engine for FinLens AI.
 Uses pre-defined SQL templates with AI intent classification.
 SECURITY: AI never generates SQL directly - only selects templates and extracts parameters.
 PostgreSQL-only implementation.
+
+HYBRID QUERY SYSTEM:
+- Data queries → SQL templates (secure, fast)
+- Conversational queries → Gemini AI with user context (advice, planning, explanations)
 """
 
 from __future__ import annotations
@@ -19,6 +23,22 @@ from models import NLQueryResponse
 # Currency settings from environment
 CURRENCY_CODE = os.getenv("CURRENCY_CODE", "GHS")
 CURRENCY_SYMBOL = os.getenv("CURRENCY_SYMBOL", "GH₵")
+
+# Query type classification keywords
+DATA_QUERY_KEYWORDS = [
+    "how much", "total", "spent", "spending", "show me", "list", "compare", 
+    "highest", "lowest", "top", "biggest", "what did i", "my expenses",
+    "budget status", "over budget", "owed", "owes", "subscription cost",
+    "income this", "saved this", "goal progress"
+]
+
+CONVERSATIONAL_KEYWORDS = [
+    "create", "plan", "help me", "suggest", "recommend", "should i", 
+    "can i afford", "how do i", "how can i", "what is", "explain", 
+    "tips", "advice", "strategy", "ways to", "ideas", "feasible",
+    "best way", "good idea", "make a", "give me a", "design",
+    "college student", "save money", "reduce", "cut down", "improve"
+]
 
 
 class QueryEngine:
@@ -305,6 +325,203 @@ class QueryEngine:
     def __init__(self):
         """Initialize query engine."""
         self.gemini_client = get_gemini_client()
+    
+    def _classify_query_type(self, query: str) -> str:
+        """
+        Classify whether the query is a data query or conversational query.
+        
+        Returns:
+            "data" - User wants to query their actual financial data
+            "conversational" - User wants advice, planning, explanations
+        """
+        query_lower = query.lower()
+        
+        # Count matches for each type
+        data_score = sum(1 for keyword in DATA_QUERY_KEYWORDS if keyword in query_lower)
+        conversational_score = sum(1 for keyword in CONVERSATIONAL_KEYWORDS if keyword in query_lower)
+        
+        # If conversational keywords are present and score higher, it's conversational
+        if conversational_score > 0 and conversational_score >= data_score:
+            return "conversational"
+        
+        # If data keywords are present, it's a data query
+        if data_score > 0:
+            return "data"
+        
+        # Default: try data query first (maintains backward compatibility)
+        # But if the query is long and looks like a request, treat as conversational
+        if len(query.split()) > 8 and any(word in query_lower for word in ["i want", "i need", "please", "for me"]):
+            return "conversational"
+        
+        return "data"
+    
+    async def _get_user_financial_context(self, db, user_id: int) -> Dict[str, Any]:
+        """
+        Fetch user's financial context for personalized AI responses.
+        
+        Returns summary of income, expenses, budgets, goals, subscriptions.
+        """
+        context = {}
+        today = date.today()
+        month_start = date(today.year, today.month, 1)
+        
+        try:
+            # Get monthly income
+            cursor = await db.execute("""
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM incomes
+                WHERE user_id = $1 AND date >= $2 AND date <= $3
+            """, (user_id, month_start, today))
+            row = await cursor.fetchone()
+            context["monthly_income"] = float(row["total"]) if row else 0
+            
+            # Get monthly expenses
+            cursor = await db.execute("""
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM expenses
+                WHERE user_id = $1 AND date >= $2 AND date <= $3
+            """, (user_id, month_start, today))
+            row = await cursor.fetchone()
+            context["monthly_expenses"] = float(row["total"]) if row else 0
+            
+            # Get spending by category
+            cursor = await db.execute("""
+                SELECT category, SUM(amount) as total
+                FROM expenses
+                WHERE user_id = $1 AND date >= $2 AND date <= $3
+                GROUP BY category
+                ORDER BY total DESC
+                LIMIT 5
+            """, (user_id, month_start, today))
+            rows = await cursor.fetchall()
+            context["top_categories"] = [{"category": r["category"], "amount": float(r["total"])} for r in rows]
+            
+            # Get budget limits
+            cursor = await db.execute("""
+                SELECT category, monthly_limit
+                FROM budgets
+                WHERE user_id = $1
+            """, (user_id,))
+            rows = await cursor.fetchall()
+            context["budgets"] = [{"category": r["category"], "limit": float(r["monthly_limit"])} for r in rows]
+            context["total_budget_limit"] = sum(float(r["monthly_limit"]) for r in rows)
+            
+            # Get active goals
+            cursor = await db.execute("""
+                SELECT name, target_amount, current_amount, target_date
+                FROM savings_goals
+                WHERE user_id = $1 AND is_completed = FALSE
+                LIMIT 3
+            """, (user_id,))
+            rows = await cursor.fetchall()
+            context["goals"] = [
+                {
+                    "name": r["name"],
+                    "target": float(r["target_amount"]),
+                    "current": float(r["current_amount"]),
+                    "target_date": str(r["target_date"]) if r["target_date"] else None
+                }
+                for r in rows
+            ]
+            
+            # Get subscription costs
+            cursor = await db.execute("""
+                SELECT COALESCE(SUM(
+                    CASE 
+                        WHEN billing_cycle = 'monthly' THEN amount
+                        WHEN billing_cycle = 'yearly' THEN amount / 12
+                        WHEN billing_cycle = 'weekly' THEN amount * 4.33
+                        ELSE amount
+                    END
+                ), 0) as monthly_total
+                FROM subscriptions
+                WHERE user_id = $1 AND is_active = TRUE
+            """, (user_id,))
+            row = await cursor.fetchone()
+            context["monthly_subscriptions"] = float(row["monthly_total"]) if row else 0
+            
+            # Calculate net savings potential
+            context["net_available"] = context["monthly_income"] - context["monthly_expenses"]
+            context["currency"] = CURRENCY_CODE
+            context["currency_symbol"] = CURRENCY_SYMBOL
+            
+        except Exception as e:
+            print(f"Error fetching user context: {e}")
+            context["error"] = str(e)
+        
+        return context
+    
+    async def _handle_conversational_query(
+        self,
+        query: str,
+        db,
+        user_id: int
+    ) -> NLQueryResponse:
+        """
+        Handle conversational queries using Gemini AI with user context.
+        
+        This handles requests like:
+        - "Create a budget plan for me"
+        - "Tips for saving money"
+        - "How can I reduce my spending?"
+        """
+        # Get user's financial context
+        context = await self._get_user_financial_context(db, user_id)
+        
+        system_instruction = f"""You are FinLens AI, a helpful and knowledgeable personal finance assistant.
+You provide practical, actionable financial advice tailored to the user's situation.
+
+IMPORTANT RULES:
+1. Always use {CURRENCY_CODE} ({CURRENCY_SYMBOL}) as the currency - never use dollars or other currencies.
+2. Be specific and practical - give actual numbers, percentages, and actionable steps.
+3. Keep responses focused but comprehensive - aim for 3-5 paragraphs or a clear structured format.
+4. If creating a budget/plan, use tables or bullet points for clarity.
+5. Reference the user's actual data when relevant to personalize advice.
+6. Be encouraging and positive while being realistic.
+7. For budget plans, always consider the user's actual income and spending patterns.
+
+USER'S FINANCIAL CONTEXT:
+- Monthly Income: {CURRENCY_SYMBOL}{context.get('monthly_income', 0):,.2f}
+- Monthly Expenses So Far: {CURRENCY_SYMBOL}{context.get('monthly_expenses', 0):,.2f}
+- Net Available: {CURRENCY_SYMBOL}{context.get('net_available', 0):,.2f}
+- Total Budget Limits: {CURRENCY_SYMBOL}{context.get('total_budget_limit', 0):,.2f}
+- Monthly Subscriptions: {CURRENCY_SYMBOL}{context.get('monthly_subscriptions', 0):,.2f}
+- Top Spending Categories: {context.get('top_categories', [])}
+- Active Savings Goals: {context.get('goals', [])}
+- Budget Categories: {context.get('budgets', [])}
+
+If the user hasn't set up income/budgets yet, acknowledge this and provide general advice that they can customize."""
+
+        prompt = f"""User Question: {query}
+
+Please provide a helpful, detailed response. If they're asking for a plan or strategy, structure it clearly with specific amounts and actionable steps."""
+
+        try:
+            response = await self.gemini_client.generate_content(
+                prompt=prompt,
+                system_instruction=system_instruction
+            )
+            
+            return NLQueryResponse(
+                query=query,
+                intent="conversational_ai",
+                data={"context_used": True, "user_has_data": context.get("monthly_income", 0) > 0},
+                explanation=response,
+                sql_template_used="AI Financial Advisor",
+                confidence=0.9
+            )
+            
+        except Exception as e:
+            print(f"Conversational query failed: {e}")
+            return NLQueryResponse(
+                query=query,
+                intent="conversational_ai",
+                data={"error": str(e)},
+                explanation="I'm sorry, I couldn't process your request right now. Please try again or rephrase your question.",
+                sql_template_used="AI Financial Advisor",
+                confidence=0.0
+            )
+
     
     async def _classify_intent(self, query: str) -> Dict[str, Any]:
         """
@@ -720,14 +937,20 @@ Explain these financial results in plain English. Be specific with numbers.
         """
         Process natural language query end-to-end.
         
-        Steps:
-        1. Classify intent (AI)
-        2. Select SQL template (pre-defined)
-        3. Extract parameters (with user_id)
-        4. Execute query
-        5. Generate explanation (AI)
+        HYBRID SYSTEM:
+        1. First classify if this is a data query or conversational query
+        2. For data queries: Use SQL templates (secure, fast)
+        3. For conversational queries: Use Gemini AI with user context
         """
-        # Step 1: Classify intent
+        # Step 0: Classify query type (data vs conversational)
+        query_type = self._classify_query_type(query)
+        
+        # Route conversational queries to AI handler
+        if query_type == "conversational":
+            return await self._handle_conversational_query(query, db, user_id)
+        
+        # === DATA QUERY PATH ===
+        # Step 1: Classify intent for SQL template selection
         intent = await self._classify_intent(query)
         template_key = intent.get("template", "total_in_period")
         

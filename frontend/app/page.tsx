@@ -11,7 +11,8 @@ import OnboardingModal from '@/components/OnboardingModal';
 import QuickAddButton from '@/components/QuickAddButton';
 import NudgeCard from '@/components/NudgeCard';
 import StreakCard from '@/components/StreakCard';
-import { Plus, X, Zap, ClipboardList, Shield } from 'lucide-react';
+import UpcomingRenewalsCard from '@/components/UpcomingRenewalsCard';
+import { Plus, X } from 'lucide-react';
 
 import { API_URL, getAuthHeaders } from '@/lib/api';
 
@@ -108,33 +109,8 @@ export default function Home() {
             {/* Gamification */}
             <StreakCard refreshTrigger={refreshTrigger} />
 
-            {/* Quick Stats */}
-            <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">
-              <h2 className="text-sm font-medium text-white mb-4">Features</h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-md border border-[#262626]">
-                  <Zap className="w-4 h-4 text-emerald-400" />
-                  <div>
-                    <p className="text-sm font-medium text-white">AI Categorization</p>
-                    <p className="text-xs text-[#52525b]">Smart regex + AI hybrid</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-md border border-[#262626]">
-                  <ClipboardList className="w-4 h-4 text-cyan-400" />
-                  <div>
-                    <p className="text-sm font-medium text-white">Audit Trail</p>
-                    <p className="text-xs text-[#52525b]">Every decision logged</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-md border border-[#262626]">
-                  <Shield className="w-4 h-4 text-amber-400" />
-                  <div>
-                    <p className="text-sm font-medium text-white">Secure</p>
-                    <p className="text-xs text-[#52525b]">SQL injection protected</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Upcoming Renewals */}
+            <UpcomingRenewalsCard refreshTrigger={refreshTrigger} />
           </div>
 
           {/* Right Column - Expense List */}

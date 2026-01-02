@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ConfirmModal from '@/components/ConfirmModal';
+import EmptyState from '@/components/EmptyState';
 import {
     getSubscriptions,
     getSubscriptionSummary,
@@ -150,10 +151,14 @@ export default function SubscriptionsPage() {
                 </div>
 
                 {subscriptions.length === 0 ? (
-                    <div className="p-8 text-center">
-                        <CreditCard className="w-12 h-12 text-[#52525b] mx-auto mb-3" />
-                        <p className="text-[#a1a1aa] mb-2">No subscriptions yet</p>
-                        <p className="text-xs text-[#52525b]">Add your recurring subscriptions to track them</p>
+                    <div className="p-4">
+                        <EmptyState
+                            icon={CreditCard}
+                            title="No subscriptions yet"
+                            description="Add your recurring subscriptions to track and manage them."
+                            actionLabel="Add Subscription"
+                            onAction={() => setShowAddModal(true)}
+                        />
                     </div>
                 ) : (
                     <div className="divide-y divide-[#262626]">
@@ -203,7 +208,10 @@ export default function SubscriptionsPage() {
 
             {/* Add Subscription Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                    onClick={(e) => e.target === e.currentTarget && setShowAddModal(false)}
+                >
                     <div className="bg-[#171717] border border-[#262626] rounded-lg w-full max-w-md">
                         <div className="flex items-center justify-between p-4 border-b border-[#262626]">
                             <h2 className="text-sm font-medium text-white">Add Subscription</h2>
