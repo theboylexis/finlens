@@ -15,7 +15,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 AI_MODEL = os.getenv("AI_MODEL", "gemini-2.5-flash")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.3"))
-AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "4000"))  # Increased for detailed advice
+AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "8192"))  # Max for detailed responses
 
 
 class GeminiClient:
