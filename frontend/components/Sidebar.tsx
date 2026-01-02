@@ -17,11 +17,13 @@ import {
     Menu,
     X,
     ChevronDown,
-    Trash2
+    Trash2,
+    Bot
 } from 'lucide-react';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'AI Advisor', href: '/chat', icon: Bot },
     { name: 'Income', href: '/income', icon: Wallet },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Goals', href: '/goals', icon: Target },
