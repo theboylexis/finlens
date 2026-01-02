@@ -119,27 +119,27 @@ export default function ChatPage() {
                 )
             }
         >
-            <div className="flex flex-col h-[calc(100vh-180px)] max-w-4xl mx-auto">
+            <div className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-180px)] w-full max-w-4xl mx-auto">
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+                <div className="flex-1 overflow-y-auto space-y-4 pb-4 px-1">
                     {messages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4">
-                                <Sparkles className="w-8 h-8 text-white" />
+                        <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4">
+                                <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white" />
                             </div>
-                            <h2 className="text-xl font-semibold text-white mb-2">FinLens AI Advisor</h2>
-                            <p className="text-sm text-[#71717a] mb-6 max-w-md">
+                            <h2 className="text-lg md:text-xl font-semibold text-white mb-2">FinLens AI Advisor</h2>
+                            <p className="text-xs md:text-sm text-[#71717a] mb-6 max-w-md px-2">
                                 Ask me anything about your finances. I can create budget plans, analyze spending,
                                 give savings tips, and answer questions about your financial data.
                             </p>
 
-                            {/* Suggested Prompts */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                            {/* Suggested Prompts - Stack on mobile */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-lg">
                                 {SUGGESTED_PROMPTS.map((prompt, i) => (
                                     <button
                                         key={i}
                                         onClick={() => handleSubmit(undefined, prompt)}
-                                        className="p-3 text-left text-sm bg-[#171717] hover:bg-[#1f1f1f] border border-[#262626] rounded-lg text-[#a1a1aa] hover:text-white transition-colors"
+                                        className="p-3 text-left text-xs md:text-sm bg-[#171717] hover:bg-[#1f1f1f] border border-[#262626] rounded-lg text-[#a1a1aa] hover:text-white transition-colors"
                                     >
                                         {prompt}
                                     </button>
@@ -160,9 +160,9 @@ export default function ChatPage() {
                                     )}
 
                                     <div
-                                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                                ? 'bg-emerald-500/20 text-emerald-100 rounded-br-md'
-                                                : 'bg-[#171717] border border-[#262626] text-white rounded-bl-md'
+                                        className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-3 md:px-4 py-2 md:py-3 ${message.role === 'user'
+                                            ? 'bg-emerald-500/20 text-emerald-100 rounded-br-md'
+                                            : 'bg-[#171717] border border-[#262626] text-white rounded-bl-md'
                                             }`}
                                     >
                                         {message.role === 'assistant' ? (
@@ -254,26 +254,26 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="border-t border-[#262626] pt-4">
-                    <form onSubmit={handleSubmit} className="flex gap-3">
+                <div className="border-t border-[#262626] pt-3 md:pt-4">
+                    <form onSubmit={handleSubmit} className="flex gap-2 md:gap-3">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Ask about your finances, budgets, spending..."
-                            className="flex-1 px-4 py-3 bg-[#171717] border border-[#262626] rounded-xl text-white placeholder-[#52525b] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
+                            placeholder="Ask about finances..."
+                            className="flex-1 px-3 md:px-4 py-2.5 md:py-3 bg-[#171717] border border-[#262626] rounded-xl text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
                             disabled={loading}
                         />
                         <button
                             type="submit"
                             disabled={loading || !input.trim()}
-                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all flex items-center gap-2"
+                            className="px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all flex items-center gap-1 md:gap-2"
                         >
                             <Send className="w-4 h-4" />
-                            Send
+                            <span className="hidden md:inline">Send</span>
                         </button>
                     </form>
-                    <p className="text-xs text-[#52525b] text-center mt-2">
+                    <p className="text-[10px] md:text-xs text-[#52525b] text-center mt-2">
                         FinLens AI uses your financial data to provide personalized advice.
                     </p>
                 </div>
