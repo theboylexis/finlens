@@ -434,9 +434,10 @@ async def get_safe_to_spend(
     has_budget_warnings = len(categories_over_budget) > 0 or len(categories_near_limit) > 0
     
     # Calculate remaining income and safe to spend
+    # Note: goals_reserved is calculated but NOT subtracted from safe-to-spend
+    # per user preference - goals should not affect daily spending allowance
     remaining_income = total_income - spent_this_month
-    disposable = remaining_income - goals_reserved
-    safe_to_spend_today = max(disposable / days_remaining, 0)
+    safe_to_spend_today = max(remaining_income / days_remaining, 0)
     
     # Get today's spending
     cursor = await db.execute(
@@ -459,7 +460,7 @@ async def get_safe_to_spend(
         status = "no_income"
     elif len(categories_over_budget) > 0:
         status = "danger"
-    elif disposable < 0:
+    elif remaining_income < 0:
         status = "danger"
     elif over_daily_limit:
         status = "caution"
