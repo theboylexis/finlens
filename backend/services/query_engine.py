@@ -37,7 +37,11 @@ CONVERSATIONAL_KEYWORDS = [
     "can i afford", "how do i", "how can i", "what is", "explain", 
     "tips", "advice", "strategy", "ways to", "ideas", "feasible",
     "best way", "good idea", "make a", "give me a", "design",
-    "college student", "save money", "reduce", "cut down", "improve"
+    "college student", "save money", "reduce", "cut down", "improve",
+    # Hypothetical scenario keywords - user is specifying their own values
+    "assume", "assuming", "let's say", "if i have", "if i had", "if i get",
+    "what if", "suppose", "with a budget of", "with an income of", 
+    "i will have", "i'll have", "i expect", "i'm expecting", "incoming income"
 ]
 
 
