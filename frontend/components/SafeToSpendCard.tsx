@@ -143,12 +143,7 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
                                 <span>Budget remaining:</span>
                                 <span className="text-[#a1a1aa]">GHS {data.remaining_budget.toFixed(2)}</span>
                             </div>
-                            {data.goals_reserved > 0 && (
-                                <div className="flex justify-between">
-                                    <span>Reserved for goals:</span>
-                                    <span className="text-[#a1a1aa]">GHS {data.goals_reserved.toFixed(2)}</span>
-                                </div>
-                            )}
+
                             <div className="flex justify-between">
                                 <span>Days left in month:</span>
                                 <span className="text-[#a1a1aa]">{data.days_remaining}</span>
