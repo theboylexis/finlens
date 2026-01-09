@@ -141,9 +141,16 @@ class BudgetStatus(BaseModel):
 # Natural Language Query Models
 # ============================================================================
 
+class ChatMessage(BaseModel):
+    """A single message in conversation history."""
+    role: str = Field(..., description="Role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content")
+
+
 class NLQueryRequest(BaseModel):
     """Request model for natural language query."""
     query: str = Field(..., min_length=1, max_length=500, description="Natural language query")
+    conversation_history: Optional[List[ChatMessage]] = Field(default=None, description="Previous messages for context")
 
 
 class NLQueryResponse(BaseModel):

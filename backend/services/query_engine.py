@@ -459,7 +459,8 @@ class QueryEngine:
         self,
         query: str,
         db,
-        user_id: int
+        user_id: int,
+        conversation_history: list = None
     ) -> NLQueryResponse:
         """
         Handle conversational queries using Gemini AI with user context.
@@ -472,18 +473,32 @@ class QueryEngine:
         # Get user's financial context
         context = await self._get_user_financial_context(db, user_id)
         
+        # Build conversation context from history
+        conversation_context = ""
+        if conversation_history and len(conversation_history) > 0:
+            # Take last 4 messages for context (to avoid token limit issues)
+            recent_history = conversation_history[-4:]
+            conversation_context = "\n\nPREVIOUS CONVERSATION:\n"
+            for msg in recent_history:
+                role = "User" if msg.role == "user" else "Assistant"
+                # Truncate very long messages
+                content = msg.content[:500] + "..." if len(msg.content) > 500 else msg.content
+                conversation_context += f"{role}: {content}\n"
+            conversation_context += "\nThe user is now following up on this conversation. Use the context above to understand what they're referring to.\n"
+        
         system_instruction = f"""You are FinLens AI, a friendly and knowledgeable personal finance assistant.
 You provide practical, actionable financial advice in a natural, conversational tone.
 
 CRITICAL RULES:
 1. Always use {CURRENCY_CODE} as the currency (write it as GHS 500, not symbols like ₵).
-2. PRIORITY: If the user specifies their own numbers (income, budget amounts, expenses, etc.) in their question, USE THOSE NUMBERS EXACTLY. Do not override with platform data.
+2. PRIORITY: If the user specifies their own numbers (income, budget amounts, expenses, etc.) in their question OR in the previous conversation, USE THOSE NUMBERS EXACTLY. Do not override with platform data.
 3. The "USER'S FINANCIAL CONTEXT" below is only for reference when the user asks about their current situation. For hypothetical scenarios or future plans, use what the user specified.
 4. WRITE NATURALLY - do NOT use markdown formatting symbols. No asterisks (**), no hash symbols (#), no pipe characters (|), no tables. Write like you're talking to a friend.
 5. ALWAYS give COMPLETE, DETAILED responses. If creating a budget, list EVERY category with its specific amount. Never just give headings or titles - fill in all the details and numbers.
 6. Be specific - give actual amounts in GHS, percentages, and actionable steps.
 7. Structure your response with clear paragraphs. Use simple line breaks between sections. You can use dashes (-) for simple lists.
 8. Be encouraging while being realistic.
+9. If this is a follow-up message, CONTINUE the previous conversation naturally. Apply any adjustments the user requests to the previous budget or plan.
 
 USER'S FINANCIAL CONTEXT (for reference only - user-specified values take priority):
 - Monthly Income: GHS {context.get('monthly_income', 0):,.2f}
@@ -491,15 +506,17 @@ USER'S FINANCIAL CONTEXT (for reference only - user-specified values take priori
 - Net Available: GHS {context.get('net_available', 0):,.2f}
 - Monthly Subscriptions: GHS {context.get('monthly_subscriptions', 0):,.2f}
 
-If the user provides their own income, budget, or expense amounts in their question, create plans based on THEIR numbers, not the platform data."""
+If the user provides their own income, budget, or expense amounts in their question or in the conversation history, create plans based on THEIR numbers, not the platform data."""
 
-        prompt = f"""User Question: {query}
+        prompt = f"""{conversation_context}
+User Question: {query}
 
 IMPORTANT INSTRUCTIONS:
-1. If the user specifies any amounts or income figures, use THOSE exact values. Do not use platform data.
+1. If the user specifies any amounts or income figures (in this message OR previous messages), use THOSE exact values. Do not use platform data.
 2. Write in natural conversational language. No markdown symbols, no tables, no asterisks.
-3. Give a COMPLETE and DETAILED response. If they ask for a budget, list every single category with its specific GHS amount. Do not leave anything blank or incomplete.
-4. Use simple formatting: paragraphs separated by line breaks, and dashes (-) for lists if needed."""
+3. Give a COMPLETE and DETAILED response. If they ask for a budget or adjustments to one, list every single category with its specific GHS amount. Do not leave anything blank or incomplete.
+4. Use simple formatting: paragraphs separated by line breaks, and dashes (-) for lists if needed.
+5. If this is a follow-up, apply the requested changes to the previous plan and show the UPDATED complete budget."""
 
         try:
             response = await self.gemini_client.generate_content(
@@ -510,7 +527,7 @@ IMPORTANT INSTRUCTIONS:
             return NLQueryResponse(
                 query=query,
                 intent="conversational_ai",
-                data={"context_used": True, "user_has_data": context.get("monthly_income", 0) > 0},
+                data={"context_used": True, "user_has_data": context.get("monthly_income", 0) > 0, "has_history": conversation_history is not None and len(conversation_history) > 0},
                 explanation=response,
                 sql_template_used="AI Financial Advisor",
                 confidence=0.9
@@ -937,7 +954,8 @@ Explain these financial results in plain English. Be specific with numbers.
         self,
         query: str,
         db,
-        user_id: int
+        user_id: int,
+        conversation_history: list = None
     ) -> NLQueryResponse:
         """
         Process natural language query end-to-end.
@@ -950,9 +968,13 @@ Explain these financial results in plain English. Be specific with numbers.
         # Step 0: Classify query type (data vs conversational)
         query_type = self._classify_query_type(query)
         
+        # If we have conversation history, treat as conversational to maintain context
+        if conversation_history and len(conversation_history) > 0:
+            query_type = "conversational"
+        
         # Route conversational queries to AI handler
         if query_type == "conversational":
-            return await self._handle_conversational_query(query, db, user_id)
+            return await self._handle_conversational_query(query, db, user_id, conversation_history)
         
         # === DATA QUERY PATH ===
         # Step 1: Classify intent for SQL template selection

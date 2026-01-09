@@ -61,7 +61,13 @@ export default function ChatPage() {
             const res = await fetch(`${API_URL}/api/queries/ask`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-                body: JSON.stringify({ query }),
+                body: JSON.stringify({
+                    query,
+                    conversation_history: messages.map(m => ({
+                        role: m.role,
+                        content: m.content
+                    }))
+                }),
                 signal: controller.signal,
             });
 

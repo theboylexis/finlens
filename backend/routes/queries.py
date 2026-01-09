@@ -39,7 +39,12 @@ async def ask_query(
     user_id = user["id"]
     
     try:
-        response = await query_engine.process_query(request.query, db, user_id)
+        response = await query_engine.process_query(
+            request.query, 
+            db, 
+            user_id,
+            conversation_history=request.conversation_history
+        )
         return response
     except Exception as e:
         raise HTTPException(
