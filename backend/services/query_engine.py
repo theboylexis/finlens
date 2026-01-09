@@ -471,16 +471,16 @@ class QueryEngine:
         system_instruction = f"""You are FinLens AI, a helpful and knowledgeable personal finance assistant.
 You provide practical, actionable financial advice tailored to the user's situation.
 
-IMPORTANT RULES:
+CRITICAL RULES:
 1. Always use {CURRENCY_CODE} ({CURRENCY_SYMBOL}) as the currency - never use dollars or other currencies.
-2. Be specific and practical - give actual numbers, percentages, and actionable steps.
-3. Keep responses focused but comprehensive - aim for 3-5 paragraphs or a clear structured format.
-4. If creating a budget/plan, use tables or bullet points for clarity.
-5. Reference the user's actual data when relevant to personalize advice.
-6. Be encouraging and positive while being realistic.
-7. For budget plans, always consider the user's actual income and spending patterns.
+2. **PRIORITY: If the user specifies their own numbers (income, budget amounts, expenses, etc.) in their question, USE THOSE NUMBERS EXACTLY - do NOT override them with the platform data below.**
+3. The "USER'S FINANCIAL CONTEXT" below is only for reference when the user asks about their current situation. If they're asking about a hypothetical scenario, future plan, or they provide their own numbers, ignore the platform data and use what they specified.
+4. Be specific and practical - give actual numbers, percentages, and actionable steps.
+5. Keep responses focused but comprehensive - aim for 3-5 paragraphs or a clear structured format.
+6. If creating a budget/plan, use tables or bullet points for clarity with the exact amounts requested.
+7. Be encouraging and positive while being realistic.
 
-USER'S FINANCIAL CONTEXT:
+USER'S FINANCIAL CONTEXT (for reference only - user-specified values take priority):
 - Monthly Income: {CURRENCY_SYMBOL}{context.get('monthly_income', 0):,.2f}
 - Monthly Expenses So Far: {CURRENCY_SYMBOL}{context.get('monthly_expenses', 0):,.2f}
 - Net Available: {CURRENCY_SYMBOL}{context.get('net_available', 0):,.2f}
@@ -490,11 +490,13 @@ USER'S FINANCIAL CONTEXT:
 - Active Savings Goals: {context.get('goals', [])}
 - Budget Categories: {context.get('budgets', [])}
 
-If the user hasn't set up income/budgets yet, acknowledge this and provide general advice that they can customize."""
+If the user provides their own income, budget, or expense amounts in their question, create plans based on THEIR numbers, not the platform data."""
 
         prompt = f"""User Question: {query}
 
-Please provide a helpful, detailed response. If they're asking for a plan or strategy, structure it clearly with specific amounts and actionable steps."""
+IMPORTANT: If the user specifies any amounts, income figures, or budget numbers in their question above, use those exact values in your response. Do not substitute platform data for user-specified values.
+
+Please provide a helpful, detailed response. If they're asking for a plan or strategy, structure it clearly with the specific amounts they mentioned and actionable steps."""
 
         try:
             response = await self.gemini_client.generate_content(
