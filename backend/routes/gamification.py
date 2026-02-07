@@ -100,132 +100,134 @@ async def get_gamification_stats(
     today = date.today()
     yesterday = today - timedelta(days=1)
     
-    async with db.get_connection() as conn:
-        # Calculate streak from expense history
-        # Get all distinct dates with expenses, ordered by date desc
-        dates_cursor = await conn.execute(
-            """
-            SELECT DISTINCT date FROM expenses 
-            WHERE user_id = ? 
-            ORDER BY date DESC 
-            LIMIT 365
-            """,
-            (user_id,)
-        )
-        date_rows = await dates_cursor.fetchall()
-        
-        # Calculate current streak
-        expense_dates = []
-        for row in date_rows:
-            d = row['date']
-            if isinstance(d, str):
-                d = datetime.strptime(d, "%Y-%m-%d").date()
-            expense_dates.append(d)
-        
-        current_streak = 0
-        longest_streak = 0
-        last_activity_date = expense_dates[0] if expense_dates else None
-        
-        if expense_dates:
-            # Check if streak is active (today or yesterday)
-            if expense_dates[0] == today or expense_dates[0] == yesterday:
-                # Count consecutive days
-                expected_date = expense_dates[0]
-                for d in expense_dates:
-                    if d == expected_date:
-                        current_streak += 1
-                        expected_date = d - timedelta(days=1)
-                    else:
-                        break
-            
-            # Calculate longest streak (simplified)
-            temp_streak = 1
-            for i in range(1, len(expense_dates)):
-                if expense_dates[i] == expense_dates[i-1] - timedelta(days=1):
-                    temp_streak += 1
-                    longest_streak = max(longest_streak, temp_streak)
+    # db is already a connection from get_db dependency
+    conn = db
+    
+    # Calculate streak from expense history
+    # Get all distinct dates with expenses, ordered by date desc
+    dates_cursor = await conn.execute(
+        """
+        SELECT DISTINCT date FROM expenses 
+        WHERE user_id = ? 
+        ORDER BY date DESC 
+        LIMIT 365
+        """,
+        (user_id,)
+    )
+    date_rows = await dates_cursor.fetchall()
+    
+    # Calculate current streak
+    expense_dates = []
+    for row in date_rows:
+        d = row['date']
+        if isinstance(d, str):
+            d = datetime.strptime(d, "%Y-%m-%d").date()
+        expense_dates.append(d)
+    
+    current_streak = 0
+    longest_streak = 0
+    last_activity_date = expense_dates[0] if expense_dates else None
+    
+    if expense_dates:
+        # Check if streak is active (today or yesterday)
+        if expense_dates[0] == today or expense_dates[0] == yesterday:
+            # Count consecutive days
+            expected_date = expense_dates[0]
+            for d in expense_dates:
+                if d == expected_date:
+                    current_streak += 1
+                    expected_date = d - timedelta(days=1)
                 else:
-                    temp_streak = 1
-            longest_streak = max(longest_streak, current_streak)
+                    break
         
-        # Determine streak status
-        if current_streak > 0 and last_activity_date == today:
-            streak_status = "active"
-        elif last_activity_date == yesterday:
-            streak_status = "at_risk"
-        else:
-            streak_status = "broken"
-        
-        streak_info = StreakInfo(
-            current_streak=current_streak,
-            longest_streak=longest_streak,
-            last_activity_date=last_activity_date,
-            streak_status=streak_status
-        )
-        
-        # Get total expenses count
-        count_cursor = await conn.execute(
-            "SELECT COUNT(*) as count FROM expenses WHERE user_id = ?",
-            (user_id,)
-        )
-        count_row = await count_cursor.fetchone()
-        total_expenses = count_row['count'] if count_row else 0
-        
-        # Get completed goals count
-        goals_cursor = await conn.execute(
-            "SELECT COUNT(*) as count FROM savings_goals WHERE user_id = ? AND is_completed = 1",
-            (user_id,)
-        )
-        goals_row = await goals_cursor.fetchone()
-        goals_completed = goals_row['count'] if goals_row else 0
-        
-        # Check badges earned
-        badges_earned: List[Badge] = []
-        
-        # First Expense badge
-        if total_expenses >= 1:
-            badges_earned.append(Badge(
-                **BADGES["first_expense"],
-                is_earned=True,
-                earned_at=datetime.now()
-            ))
-        
-        # Streak badges
-        if longest_streak >= 7:
-            badges_earned.append(Badge(
-                **BADGES["streak_7"],
-                is_earned=True,
-                earned_at=datetime.now()
-            ))
-        
-        if longest_streak >= 30:
-            badges_earned.append(Badge(
-                **BADGES["streak_30"],
-                is_earned=True,
-                earned_at=datetime.now()
-            ))
-        
-        # Goal Crusher badge
-        if goals_completed >= 1:
-            badges_earned.append(Badge(
-                **BADGES["goal_crusher"],
-                is_earned=True,
-                earned_at=datetime.now()
-            ))
-        
-        # Add unearned badges
-        earned_ids = {b.id for b in badges_earned}
-        for badge_id, badge_data in BADGES.items():
-            if badge_id not in earned_ids:
-                badges_earned.append(Badge(**badge_data, is_earned=False))
-        
-        return GamificationStats(
-            streak=streak_info,
-            badges=badges_earned,
-            total_expenses_logged=total_expenses,
-            goals_completed=goals_completed,
-            months_under_budget=0  # TODO: Calculate properly
-        )
+        # Calculate longest streak (simplified)
+        temp_streak = 1
+        for i in range(1, len(expense_dates)):
+            if expense_dates[i] == expense_dates[i-1] - timedelta(days=1):
+                temp_streak += 1
+                longest_streak = max(longest_streak, temp_streak)
+            else:
+                temp_streak = 1
+        longest_streak = max(longest_streak, current_streak)
+    
+    # Determine streak status
+    if current_streak > 0 and last_activity_date == today:
+        streak_status = "active"
+    elif last_activity_date == yesterday:
+        streak_status = "at_risk"
+    else:
+        streak_status = "broken"
+    
+    streak_info = StreakInfo(
+        current_streak=current_streak,
+        longest_streak=longest_streak,
+        last_activity_date=last_activity_date,
+        streak_status=streak_status
+    )
+    
+    # Get total expenses count
+    count_cursor = await conn.execute(
+        "SELECT COUNT(*) as count FROM expenses WHERE user_id = ?",
+        (user_id,)
+    )
+    count_row = await count_cursor.fetchone()
+    total_expenses = count_row['count'] if count_row else 0
+    
+    # Get completed goals count
+    goals_cursor = await conn.execute(
+        "SELECT COUNT(*) as count FROM savings_goals WHERE user_id = ? AND is_completed = 1",
+        (user_id,)
+    )
+    goals_row = await goals_cursor.fetchone()
+    goals_completed = goals_row['count'] if goals_row else 0
+    
+    # Check badges earned
+    badges_earned: List[Badge] = []
+    
+    # First Expense badge
+    if total_expenses >= 1:
+        badges_earned.append(Badge(
+            **BADGES["first_expense"],
+            is_earned=True,
+            earned_at=datetime.now()
+        ))
+    
+    # Streak badges
+    if longest_streak >= 7:
+        badges_earned.append(Badge(
+            **BADGES["streak_7"],
+            is_earned=True,
+            earned_at=datetime.now()
+        ))
+    
+    if longest_streak >= 30:
+        badges_earned.append(Badge(
+            **BADGES["streak_30"],
+            is_earned=True,
+            earned_at=datetime.now()
+        ))
+    
+    # Goal Crusher badge
+    if goals_completed >= 1:
+        badges_earned.append(Badge(
+            **BADGES["goal_crusher"],
+            is_earned=True,
+            earned_at=datetime.now()
+        ))
+    
+    # Add unearned badges
+    earned_ids = {b.id for b in badges_earned}
+    for badge_id, badge_data in BADGES.items():
+        if badge_id not in earned_ids:
+            badges_earned.append(Badge(**badge_data, is_earned=False))
+    
+    return GamificationStats(
+        streak=streak_info,
+        badges=badges_earned,
+        total_expenses_logged=total_expenses,
+        goals_completed=goals_completed,
+        months_under_budget=0  # TODO: Calculate properly
+    )
 
 
 @router.post("/check-achievements")
