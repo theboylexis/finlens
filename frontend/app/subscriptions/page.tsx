@@ -126,20 +126,48 @@ export default function SubscriptionsPage() {
                 </button>
             }
         >
-            {/* Summary Cards */}
+            {/* Summary Cards with Smart Insights */}
             {summary && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">
-                        <p className="text-xs text-[#52525b] mb-1">Monthly Cost</p>
-                        <p className="text-2xl font-bold text-white">GHS {summary.total_monthly_cost.toFixed(2)}</p>
+                <div className="mb-6 space-y-4">
+                    {/* Smart Insight Header */}
+                    <div className="flex items-center gap-3 p-4 bg-[#171717] border border-[#262626] rounded-lg">
+                        <span className="text-2xl">
+                            {summary.subscription_count === 0 ? '📭' :
+                                summary.subscription_count <= 3 ? '✅' :
+                                    summary.subscription_count <= 6 ? '📋' : '⚠️'}
+                        </span>
+                        <div>
+                            <h2 className={`text-sm font-medium ${summary.subscription_count === 0 ? 'text-gray-400' :
+                                    summary.subscription_count <= 3 ? 'text-emerald-400' :
+                                        summary.subscription_count <= 6 ? 'text-amber-400' : 'text-orange-400'
+                                }`}>
+                                {summary.subscription_count === 0 ? 'No subscriptions tracked' :
+                                    summary.subscription_count <= 3 ? 'Subscriptions under control' :
+                                        summary.subscription_count <= 6 ? `${summary.subscription_count} active subscriptions` :
+                                            'Consider reviewing your subscriptions'}
+                            </h2>
+                            <p className="text-xs text-[#52525b]">
+                                {summary.total_monthly_cost > 0
+                                    ? `GHS ${summary.total_monthly_cost.toFixed(2)}/month in recurring costs`
+                                    : 'Track recurring payments to stay on top of bills'}
+                            </p>
+                        </div>
                     </div>
-                    <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">
-                        <p className="text-xs text-[#52525b] mb-1">Yearly Cost</p>
-                        <p className="text-2xl font-bold text-white">GHS {summary.total_yearly_cost.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-[#171717] border border-[#262626] rounded-lg p-4">
-                        <p className="text-xs text-[#52525b] mb-1">Active Subscriptions</p>
-                        <p className="text-2xl font-bold text-white">{summary.subscription_count}</p>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 transition-all duration-300">
+                            <p className="text-xs text-[#52525b] mb-1">Monthly Cost</p>
+                            <p className="text-2xl font-bold text-amber-400">GHS {summary.total_monthly_cost.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 transition-all duration-300">
+                            <p className="text-xs text-[#52525b] mb-1">Yearly Cost</p>
+                            <p className="text-2xl font-bold text-white">GHS {summary.total_yearly_cost.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 transition-all duration-300">
+                            <p className="text-xs text-[#52525b] mb-1">Active Subscriptions</p>
+                            <p className="text-2xl font-bold text-white">{summary.subscription_count}</p>
+                        </div>
                     </div>
                 </div>
             )}

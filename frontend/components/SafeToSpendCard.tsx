@@ -1,20 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import { getSafeToSpend, getIncomeSummary, SafeToSpend, CategoryBudgetStatus } from '@/lib/api';
-import { Wallet, TrendingUp, TrendingDown, AlertCircle, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Wallet, ChevronDown, ChevronUp, AlertTriangle, Plus, Sparkles } from 'lucide-react';
 
 interface SafeToSpendCardProps {
     refreshTrigger?: number;
+    onAddIncome?: () => void;
 }
 
-export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardProps) {
+export default function SafeToSpendCard({ refreshTrigger = 0, onAddIncome }: SafeToSpendCardProps) {
     const [data, setData] = useState<SafeToSpend | null>(null);
     const [income, setIncome] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showBudgetDetails, setShowBudgetDetails] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -35,22 +35,65 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
         fetchData();
     }, [refreshTrigger]);
 
-    const getStatusConfig = () => {
-        if (!data) return { color: 'text-gray-400', bg: 'bg-gray-500/10', icon: Wallet };
-
-        switch (data.status) {
-            case 'healthy':
-                return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: TrendingUp };
-            case 'caution':
-                return { color: 'text-amber-400', bg: 'bg-amber-500/10', icon: AlertCircle };
-            case 'danger':
-                return { color: 'text-red-400', bg: 'bg-red-500/10', icon: TrendingDown };
-            case 'no_budget':
-            case 'no_income':
-                return { color: 'text-gray-400', bg: 'bg-gray-500/10', icon: Wallet };
-            default:
-                return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: Wallet };
+    // Emotional state configuration
+    const getEmotionalState = (usedPercent: number, overLimit: boolean) => {
+        if (overLimit) {
+            return {
+                emoji: '🔴',
+                message: 'Over budget today',
+                color: 'text-red-400',
+                bg: 'bg-red-500/10',
+                barColor: 'bg-red-500'
+            };
         }
+        if (usedPercent < 50) {
+            return {
+                emoji: '🟢',
+                message: 'You\'re on track',
+                color: 'text-emerald-400',
+                bg: 'bg-emerald-500/10',
+                barColor: 'bg-emerald-500'
+            };
+        }
+        if (usedPercent < 80) {
+            return {
+                emoji: '🟡',
+                message: 'Watch your spending',
+                color: 'text-amber-400',
+                bg: 'bg-amber-500/10',
+                barColor: 'bg-amber-500'
+            };
+        }
+        if (usedPercent < 100) {
+            return {
+                emoji: '🟠',
+                message: 'Almost at limit',
+                color: 'text-orange-400',
+                bg: 'bg-orange-500/10',
+                barColor: 'bg-orange-500'
+            };
+        }
+        return {
+            emoji: '🔴',
+            message: 'Over budget',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            barColor: 'bg-red-500'
+        };
+    };
+
+    // Micro-celebration message
+    const getCelebrationMessage = (leftToSpend: number, usedPercent: number, spentToday: number) => {
+        if (spentToday === 0) {
+            return { show: true, message: '✨ No spending yet today — great start!' };
+        }
+        if (usedPercent < 30 && spentToday > 0) {
+            return { show: true, message: `🎉 Nice! You saved GHS ${leftToSpend.toFixed(2)} for later` };
+        }
+        if (usedPercent < 50) {
+            return { show: true, message: '💪 Staying disciplined today!' };
+        }
+        return { show: false, message: '' };
     };
 
     const renderCategoryStatus = (cat: CategoryBudgetStatus) => {
@@ -70,9 +113,6 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
         );
     };
 
-    const config = getStatusConfig();
-    const Icon = config.icon;
-
     if (loading) {
         return (
             <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 animate-pulse">
@@ -82,107 +122,146 @@ export default function SafeToSpendCard({ refreshTrigger = 0 }: SafeToSpendCardP
         );
     }
 
+    // Calculate metrics
+    const leftToSpend = data ? Math.max(0, data.safe_to_spend_today - data.spent_today) : 0;
+    const usedPercent = data && data.safe_to_spend_today > 0
+        ? Math.min(100, (data.spent_today / data.safe_to_spend_today) * 100)
+        : 0;
+
+    const emotionalState = getEmotionalState(usedPercent, data?.over_daily_limit || false);
+    const celebration = data ? getCelebrationMessage(leftToSpend, usedPercent, data.spent_today) : { show: false, message: '' };
     const hasWarnings = data?.has_budget_warnings;
     const totalWarnings = (data?.categories_over_budget?.length || 0) + (data?.categories_near_limit?.length || 0);
 
     return (
-        <div className={`${config.bg} border border-[#262626] rounded-lg p-4`}>
-            <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-medium text-[#a1a1aa]">Safe to Spend Today</h2>
-                <Icon className={`w-5 h-5 ${config.color}`} />
-            </div>
-
-            {income !== null && income > 0 && (
-                <div className="mb-2 text-xs text-[#a1a1aa]">
-                    Monthly income: <span className="font-semibold text-emerald-400">GHS {income.toFixed(2)}</span>
-                </div>
-            )}
-
+        <div className={`${emotionalState.bg} border border-[#262626] rounded-lg p-4 transition-all duration-300`}>
             {error ? (
                 <p className="text-sm text-[#52525b]">{error}</p>
             ) : data ? (
                 (data.status === 'no_budget' || data.status === 'no_income') ? (
-                    <div className="text-center py-2">
-                        <div className="text-2xl font-bold text-gray-400 mb-3">— —</div>
-                        <p className="text-xs text-emerald-400">
-                            💡 Add your income to see your safe spending amount
+                    // Improved empty state with CTA
+                    <div className="text-center py-4">
+                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#262626] flex items-center justify-center">
+                            <Wallet className="w-6 h-6 text-[#52525b]" />
+                        </div>
+                        <h3 className="text-sm font-medium text-white mb-1">Set up your budget</h3>
+                        <p className="text-xs text-[#52525b] mb-4">
+                            Add your monthly income to unlock your daily spending limit
                         </p>
+                        <button
+                            onClick={onAddIncome}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-sm font-medium transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Income
+                        </button>
                     </div>
                 ) : (
                     <>
-                        <div className={`text-3xl font-bold ${config.color} mb-2`}>
-                            GHS {data.safe_to_spend_today.toFixed(2)}
+                        {/* Emotional State Header */}
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg">{emotionalState.emoji}</span>
+                                <span className={`text-sm font-medium ${emotionalState.color}`}>
+                                    {emotionalState.message}
+                                </span>
+                            </div>
+                            <Wallet className={`w-5 h-5 ${emotionalState.color}`} />
                         </div>
+
+                        {/* Hero Number */}
+                        <div className="mb-1">
+                            <span className="text-xs text-[#52525b]">Left to spend today</span>
+                        </div>
+                        <div className={`text-3xl font-bold ${emotionalState.color} mb-3 transition-all duration-300`}>
+                            GHS {leftToSpend.toFixed(2)}
+                        </div>
+
+                        {/* Progress Bar with Animation */}
+                        <div className="mb-3">
+                            <div className="h-2 bg-[#262626] rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full ${emotionalState.barColor} transition-all duration-500 ease-out`}
+                                    style={{ width: `${Math.min(100, usedPercent)}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between mt-1">
+                                <span className="text-xs text-[#52525b]">
+                                    {usedPercent.toFixed(0)}% of daily budget used
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Micro-celebration */}
+                        {celebration.show && !data.over_daily_limit && (
+                            <div className="mb-3 flex items-center gap-2 text-xs text-emerald-400 animate-fade-in">
+                                <Sparkles className="w-3 h-3" />
+                                <span>{celebration.message}</span>
+                            </div>
+                        )}
 
                         {/* Daily Overspend Warning */}
                         {data.over_daily_limit && (
-                            <div className="mb-3 p-2 bg-amber-500/20 border border-amber-500/30 rounded-lg">
-                                <div className="flex items-center gap-2 text-amber-400">
+                            <div className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+                                <div className="flex items-center gap-2 text-red-400">
                                     <AlertTriangle className="w-4 h-4" />
-                                    <span className="text-xs font-medium">Over daily limit!</span>
+                                    <span className="text-xs font-medium">
+                                        Over by GHS {data.daily_overspend_amount.toFixed(2)}
+                                    </span>
                                 </div>
-                                <p className="text-xs text-amber-300 mt-1">
-                                    Spent <span className="font-semibold">GHS {data.spent_today.toFixed(2)}</span> today —
-                                    that's <span className="font-semibold">GHS {data.daily_overspend_amount.toFixed(2)}</span> over your safe amount.
-                                </p>
                             </div>
                         )}
 
-                        {/* Show today's spending even when not over limit */}
-                        {!data.over_daily_limit && data.spent_today > 0 && (
-                            <div className="mb-2 text-xs text-[#a1a1aa]">
-                                Spent today: <span className="font-semibold text-emerald-400">GHS {data.spent_today.toFixed(2)}</span>
-                                <span className="text-[#52525b] ml-1">
-                                    (GHS {(data.safe_to_spend_today - data.spent_today).toFixed(2)} left)
-                                </span>
+                        {/* Collapsible Details */}
+                        <button
+                            onClick={() => setShowDetails(!showDetails)}
+                            className="flex items-center gap-1 text-xs text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+                        >
+                            {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            <span>{showDetails ? 'Hide' : 'View'} details</span>
+                        </button>
+
+                        {showDetails && (
+                            <div className="mt-3 pt-3 border-t border-[#262626] space-y-2 animate-fade-in">
+                                {income !== null && income > 0 && (
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-[#52525b]">Monthly income</span>
+                                        <span className="text-emerald-400">GHS {income.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#52525b]">Daily allowance</span>
+                                    <span className="text-[#a1a1aa]">GHS {data.safe_to_spend_today.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#52525b]">Spent today</span>
+                                    <span className="text-[#a1a1aa]">GHS {data.spent_today.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#52525b]">Budget remaining</span>
+                                    <span className="text-[#a1a1aa]">GHS {data.remaining_budget.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#52525b]">Days left</span>
+                                    <span className="text-[#a1a1aa]">{data.days_remaining}</span>
+                                </div>
                             </div>
                         )}
-
-                        <div className="space-y-1 text-xs text-[#52525b]">
-                            <div className="flex justify-between">
-                                <span>Budget remaining:</span>
-                                <span className="text-[#a1a1aa]">GHS {data.remaining_budget.toFixed(2)}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                                <span>Days left in month:</span>
-                                <span className="text-[#a1a1aa]">{data.days_remaining}</span>
-                            </div>
-                        </div>
 
                         {/* Budget Warnings Section */}
                         {hasWarnings && (
                             <div className="mt-3 pt-3 border-t border-[#262626]">
-                                <button
-                                    onClick={() => setShowBudgetDetails(!showBudgetDetails)}
-                                    className="flex items-center justify-between w-full text-left"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <AlertTriangle className="w-4 h-4 text-amber-400" />
-                                        <span className="text-xs font-medium text-amber-400">
-                                            {totalWarnings} budget{totalWarnings > 1 ? 's' : ''} need attention
-                                        </span>
-                                    </div>
-                                    {showBudgetDetails ? (
-                                        <ChevronUp className="w-4 h-4 text-[#52525b]" />
-                                    ) : (
-                                        <ChevronDown className="w-4 h-4 text-[#52525b]" />
-                                    )}
-                                </button>
-
-                                {showBudgetDetails && (
-                                    <div className="mt-2 space-y-1">
-                                        {data.categories_over_budget?.map(renderCategoryStatus)}
-                                        {data.categories_near_limit?.map(renderCategoryStatus)}
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2 mb-2">
+                                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                                    <span className="text-xs font-medium text-amber-400">
+                                        {totalWarnings} budget{totalWarnings > 1 ? 's' : ''} need attention
+                                    </span>
+                                </div>
+                                <div className="space-y-1">
+                                    {data.categories_over_budget?.map(renderCategoryStatus)}
+                                    {data.categories_near_limit?.map(renderCategoryStatus)}
+                                </div>
                             </div>
-                        )}
-
-                        {data.status === 'danger' && !hasWarnings && (
-                            <p className="mt-3 text-xs text-red-400">
-                                ⚠️ You've exceeded your budget for this month
-                            </p>
                         )}
                     </>
                 )

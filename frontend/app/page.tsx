@@ -6,6 +6,7 @@ import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
 import AlertsDropdown from '@/components/AlertsDropdown';
 import SafeToSpendCard from '@/components/SafeToSpendCard';
+import IncomeModal from '@/components/IncomeModal';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import OnboardingModal from '@/components/OnboardingModal';
 import QuickAddButton from '@/components/QuickAddButton';
@@ -20,6 +21,7 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
 
   useEffect(() => {
     // Check if user is new (no expenses) - show onboarding for truly new users
@@ -100,7 +102,7 @@ export default function Home() {
             )}
 
             {/* Summary Cards */}
-            <SafeToSpendCard refreshTrigger={refreshTrigger} />
+            <SafeToSpendCard refreshTrigger={refreshTrigger} onAddIncome={() => setShowIncomeModal(true)} />
             <WeeklySummaryCard refreshTrigger={refreshTrigger} />
 
             {/* AI Insights */}
@@ -134,6 +136,17 @@ export default function Home() {
         <OnboardingModal
           onClose={() => setShowOnboarding(false)}
           onComplete={handleOnboardingComplete}
+        />
+      )}
+
+      {/* Income Modal */}
+      {showIncomeModal && (
+        <IncomeModal
+          onClose={() => setShowIncomeModal(false)}
+          onSuccess={() => {
+            setShowIncomeModal(false);
+            setRefreshTrigger(prev => prev + 1);
+          }}
         />
       )}
 

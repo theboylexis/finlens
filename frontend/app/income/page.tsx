@@ -73,15 +73,23 @@ export default function IncomePage() {
                 </button>
             }
         >
-            {/* Summary Card */}
-            <div className="bg-[#171717] border border-[#262626] rounded-lg p-4 mb-6">
+            {/* Summary Card with Emotional Context */}
+            <div className="bg-emerald-500/10 border border-[#262626] rounded-lg p-4 mb-6 transition-all duration-300">
                 <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-sm font-medium text-[#a1a1aa]">This Month</h2>
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">💰</span>
+                        <h2 className="text-sm font-medium text-emerald-400">
+                            {summary && summary.total_income > 0
+                                ? (summary.total_income >= 500 ? 'Great month!' : 'Income tracked')
+                                : 'Track your income'}
+                        </h2>
+                    </div>
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
                 </div>
-                <div className="text-3xl font-bold text-emerald-400">
+                <div className="text-3xl font-bold text-emerald-400 mb-1">
                     GH₵ {summary?.total_income.toFixed(2) || '0.00'}
                 </div>
+                <p className="text-xs text-[#52525b]">This month's total income</p>
             </div>
 
             {/* History List */}

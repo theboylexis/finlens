@@ -59,11 +59,17 @@ export default function BudgetProgressCards() {
     return (
         <>
             {budgets.length === 0 ? (
-                <div className="text-center py-4">
-                    <p className="text-sm text-[#52525b] mb-3">No budgets set</p>
+                <div className="text-center py-6">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#262626] flex items-center justify-center">
+                        <span className="text-xl">📊</span>
+                    </div>
+                    <h3 className="text-sm font-medium text-white mb-1">No budgets set</h3>
+                    <p className="text-xs text-[#52525b] mb-4 max-w-xs mx-auto">
+                        Set category budgets to track and manage your spending limits
+                    </p>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-medium rounded-md"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-sm font-medium transition-colors"
                     >
                         + Set Budget
                     </button>
