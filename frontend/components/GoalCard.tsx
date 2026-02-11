@@ -11,6 +11,11 @@ interface Goal {
     icon: string;
     color: string;
     is_completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    progress_percentage: number;
+    days_remaining: number | null;
 }
 
 interface GoalCardProps {
