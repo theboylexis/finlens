@@ -69,7 +69,7 @@ export default function GoalsPage() {
     fetchGoals();
   };
 
-  const handleContribute = async (goalId: number, amount: number, note: string): Promise<boolean> => {
+  const handleContribute = async (goalId: number, amount: number, note: string): Promise<true | string> => {
     try {
       const response = await fetch(`${API_URL}/api/goals/${goalId}/contribute`, {
         method: 'POST',
@@ -78,8 +78,18 @@ export default function GoalsPage() {
       });
 
       if (!response.ok) {
-        console.error('Contribute failed:', response.status, await response.text());
-        return false;
+        let errorMsg = `Server error (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.detail || errorMsg;
+        } catch {
+          // response wasn't JSON
+        }
+        console.error('Contribute failed:', response.status, errorMsg);
+        if (response.status === 401) {
+          return 'Session expired. Please log out and log back in.';
+        }
+        return errorMsg;
       }
 
       const updatedGoal = await response.json();
@@ -94,7 +104,7 @@ export default function GoalsPage() {
       return true;
     } catch (err) {
       console.error('Error adding contribution:', err);
-      return false;
+      return 'Network error. Please check your connection and try again.';
     }
   };
 

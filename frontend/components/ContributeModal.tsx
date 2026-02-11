@@ -16,7 +16,7 @@ interface Goal {
 interface ContributeModalProps {
     goal: Goal;
     onClose: () => void;
-    onContribute: (goalId: number, amount: number, note: string) => Promise<boolean>;
+    onContribute: (goalId: number, amount: number, note: string) => Promise<true | string>;
 }
 
 const QUICK_AMOUNTS = [10, 20, 50, 100, 200];
@@ -33,10 +33,10 @@ export default function ContributeModal({ goal, onClose, onContribute }: Contrib
         e.preventDefault();
         setError(null);
         setLoading(true);
-        const success = await onContribute(goal.id, parseFloat(amount), note);
+        const result = await onContribute(goal.id, parseFloat(amount), note);
         setLoading(false);
-        if (!success) {
-            setError('Failed to add contribution. Please try again.');
+        if (result !== true) {
+            setError(typeof result === 'string' ? result : 'Failed to add contribution. Please try again.');
         }
     };
 
