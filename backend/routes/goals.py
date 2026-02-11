@@ -96,7 +96,7 @@ async def create_goal(
     
     # Fetch the created goal
     goal_id = cursor.lastrowid
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     row = await cursor.fetchone()
     
     return row_to_goal_response(row)
@@ -105,10 +105,11 @@ async def create_goal(
 @router.get("/{goal_id}", response_model=GoalResponse)
 async def get_goal(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Get a specific savings goal."""
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     row = await cursor.fetchone()
     
     if not row:
@@ -121,11 +122,12 @@ async def get_goal(
 async def update_goal(
     goal_id: int,
     goal_update: GoalUpdate,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Update a savings goal."""
-    # Check if goal exists
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    # Check if goal exists and belongs to the user
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     existing = await cursor.fetchone()
     
     if not existing:
@@ -151,15 +153,22 @@ async def update_goal(
         updates.append("color = ?")
         values.append(goal_update.color)
     
+    # If target_amount is being raised above current_amount, re-open the goal
+    if goal_update.target_amount is not None:
+        current_amount = existing["current_amount"] or 0
+        if goal_update.target_amount > current_amount and existing["is_completed"]:
+            updates.append("is_completed = FALSE")
+            updates.append("completed_at = NULL")
+    
     if updates:
         updates.append("updated_at = CURRENT_TIMESTAMP")
-        values.append(goal_id)
-        query = f"UPDATE savings_goals SET {', '.join(updates)} WHERE id = ?"
+        values.extend([goal_id, user["id"]])
+        query = f"UPDATE savings_goals SET {', '.join(updates)} WHERE id = ? AND user_id = ?"
         await db.execute(query, values)
         await db.commit()
     
     # Fetch updated goal
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     row = await cursor.fetchone()
     
     return row_to_goal_response(row)
@@ -168,14 +177,15 @@ async def update_goal(
 @router.delete("/{goal_id}", status_code=204)
 async def delete_goal(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Delete a savings goal."""
-    cursor = await db.execute("SELECT id FROM savings_goals WHERE id = ?", (goal_id,))
+    cursor = await db.execute("SELECT id FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     if not await cursor.fetchone():
         raise HTTPException(status_code=404, detail="Goal not found")
     
-    await db.execute("DELETE FROM savings_goals WHERE id = ?", (goal_id,))
+    await db.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     await db.commit()
 
 
@@ -187,11 +197,12 @@ async def delete_goal(
 async def add_contribution(
     goal_id: int,
     contribution: ContributionCreate,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Add a contribution to a savings goal."""
-    # Check if goal exists
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    # Check if goal exists and belongs to the user
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     goal = await cursor.fetchone()
     
     if not goal:
@@ -232,7 +243,7 @@ async def add_contribution(
     await db.commit()
     
     # Fetch updated goal
-    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,))
+    cursor = await db.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     row = await cursor.fetchone()
     
     return row_to_goal_response(row)
@@ -241,11 +252,12 @@ async def add_contribution(
 @router.get("/{goal_id}/contributions", response_model=List[ContributionResponse])
 async def get_contributions(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Get contribution history for a goal."""
-    # Check if goal exists
-    cursor = await db.execute("SELECT id FROM savings_goals WHERE id = ?", (goal_id,))
+    # Check if goal exists and belongs to the user
+    cursor = await db.execute("SELECT id FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user["id"]))
     if not await cursor.fetchone():
         raise HTTPException(status_code=404, detail="Goal not found")
     

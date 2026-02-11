@@ -322,7 +322,10 @@ async def get_weekly_summary(
 
 
 @router.get("/suggest-category", response_model=CategorySuggestion)
-async def suggest_category(description: str):
+async def suggest_category(
+    description: str,
+    user: dict = Depends(require_auth)
+):
     """
     Suggest a category for an expense description.
     
@@ -346,12 +349,13 @@ async def suggest_category(description: str):
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 async def get_expense(
     expense_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Get a specific expense by ID."""
     cursor = await db.execute(
-        "SELECT * FROM expenses WHERE id = ?",
-        (expense_id,)
+        "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, user["id"])
     )
     row = await cursor.fetchone()
     
@@ -372,17 +376,18 @@ async def get_expense(
 async def update_expense(
     expense_id: int,
     expense_update: ExpenseUpdate,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """
     Update an expense.
     
     If category is changed, marks as user_overridden.
     """
-    # Check if expense exists
+    # Check if expense exists and belongs to user
     cursor = await db.execute(
-        "SELECT * FROM expenses WHERE id = ?",
-        (expense_id,)
+        "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, user["id"])
     )
     existing = await cursor.fetchone()
     
@@ -433,8 +438,8 @@ async def update_expense(
     params.append(datetime.now())
     
     # Execute update
-    params.append(expense_id)
-    query = f"UPDATE expenses SET {', '.join(updates)} WHERE id = ?"
+    params.extend([expense_id, user["id"]])
+    query = f"UPDATE expenses SET {', '.join(updates)} WHERE id = ? AND user_id = ?"
     
     await db.execute(query, params)
     await db.commit()
@@ -452,12 +457,13 @@ async def update_expense(
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_expense(
     expense_id: int,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
 ):
     """Delete an expense."""
     cursor = await db.execute(
-        "SELECT id FROM expenses WHERE id = ?",
-        (expense_id,)
+        "SELECT id FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, user["id"])
     )
     existing = await cursor.fetchone()
     
@@ -471,7 +477,7 @@ async def delete_expense(
             }
         )
     
-    await db.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    await db.execute("DELETE FROM expenses WHERE id = ? AND user_id = ?", (expense_id, user["id"]))
     await db.commit()
     
     return None
@@ -506,12 +512,16 @@ DEMO_EXPENSES = [
 
 
 @router.post("/demo/seed")
-async def seed_demo_data(db: aiosqlite.Connection = Depends(get_db)):
+async def seed_demo_data(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: dict = Depends(require_auth)
+):
     """Populate database with realistic demo data for showcasing."""
     import random
     
     today = date.today()
     added = 0
+    user_id = user["id"]
     
     for desc, amount, category, days_ago in DEMO_EXPENSES:
         expense_date = today + timedelta(days=days_ago)
@@ -519,11 +529,11 @@ async def seed_demo_data(db: aiosqlite.Connection = Depends(get_db)):
         await db.execute(
             """
             INSERT INTO expenses (
-                amount, description, category, date,
+                user_id, amount, description, category, date,
                 categorization_method, user_overridden
-            ) VALUES (?, ?, ?, ?, 'demo', 0)
+            ) VALUES (?, ?, ?, ?, ?, 'demo', 0)
             """,
-            (amount, desc, category, expense_date)
+            (user_id, amount, desc, category, expense_date)
         )
         added += 1
     
@@ -537,17 +547,17 @@ async def seed_demo_data(db: aiosqlite.Connection = Depends(get_db)):
     
     for category, limit in budgets:
         await db.execute(
-            "INSERT OR REPLACE INTO budgets (category, monthly_limit) VALUES (?, ?)",
-            (category, limit)
+            "INSERT OR REPLACE INTO budgets (user_id, category, monthly_limit) VALUES (?, ?, ?)",
+            (user_id, category, limit)
         )
     
     # Add a savings goal
     await db.execute(
         """
-        INSERT INTO savings_goals (name, target_amount, current_amount, target_date, icon, color)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO savings_goals (user_id, name, target_amount, current_amount, target_date, icon, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        ("Spring Break Trip", 500.00, 175.00, (today + timedelta(days=90)), "🏖️", "#10b981")
+        (user_id, "Spring Break Trip", 500.00, 175.00, (today + timedelta(days=90)), "🏖️", "#10b981")
     )
     
     await db.commit()

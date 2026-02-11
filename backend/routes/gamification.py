@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from database import Database, get_db
-from dependencies import get_current_user
+from dependencies import require_auth
 
 router = APIRouter(prefix="/api/gamification", tags=["gamification"])
 
@@ -89,7 +89,7 @@ class GamificationStats(BaseModel):
 
 @router.get("/stats", response_model=GamificationStats)
 async def get_gamification_stats(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_auth),
     db: Database = Depends(get_db)
 ):
     """
@@ -232,7 +232,7 @@ async def get_gamification_stats(
 
 @router.post("/check-achievements")
 async def check_achievements(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_auth),
     db: Database = Depends(get_db)
 ):
     """

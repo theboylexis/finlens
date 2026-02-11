@@ -237,18 +237,18 @@ async def update_subscription(
         raise HTTPException(status_code=400, detail="No fields to update")
     
     update_fields.append("updated_at = CURRENT_TIMESTAMP")
-    update_values.append(subscription_id)
+    update_values.extend([subscription_id, user["id"]])
     
     await db.execute(
-        f"UPDATE subscriptions SET {', '.join(update_fields)} WHERE id = ?",
+        f"UPDATE subscriptions SET {', '.join(update_fields)} WHERE id = ? AND user_id = ?",
         tuple(update_values)
     )
     await db.commit()
     
     # Fetch updated subscription
     cursor = await db.execute(
-        "SELECT * FROM subscriptions WHERE id = ?",
-        (subscription_id,)
+        "SELECT * FROM subscriptions WHERE id = ? AND user_id = ?",
+        (subscription_id, user["id"])
     )
     row = await cursor.fetchone()
     
@@ -274,15 +274,15 @@ async def delete_subscription(
 ):
     """Delete a subscription."""
     cursor = await db.execute(
-        "SELECT id FROM subscriptions WHERE id = ?",
-        (subscription_id,)
+        "SELECT id FROM subscriptions WHERE id = ? AND user_id = ?",
+        (subscription_id, user["id"])
     )
     if not await cursor.fetchone():
         raise HTTPException(status_code=404, detail="Subscription not found")
     
     await db.execute(
-        "DELETE FROM subscriptions WHERE id = ?",
-        (subscription_id,)
+        "DELETE FROM subscriptions WHERE id = ? AND user_id = ?",
+        (subscription_id, user["id"])
     )
     await db.commit()
     

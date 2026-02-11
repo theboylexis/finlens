@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { API_URL } from '@/lib/api';
+import { useAuth } from '@/lib/AuthContext';
 
 interface WeeklyData {
     week: string;
@@ -16,11 +17,14 @@ export default function WeeklySpendingChart() {
     const [thisWeek, setThisWeek] = useState(0);
     const [lastWeek, setLastWeek] = useState(0);
     const [change, setChange] = useState(0);
+    const { getAuthHeaders } = useAuth();
 
     useEffect(() => {
         const fetchWeeklyData = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/expenses/weekly-summary`);
+                const response = await fetch(`${API_URL}/api/expenses/weekly-summary`, {
+                    headers: getAuthHeaders()
+                });
 
                 if (response.ok) {
                     const weeks: WeeklyData[] = await response.json();

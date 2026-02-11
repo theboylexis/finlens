@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Plus, Trash2, Target, Plane, Car, Home, Laptop, BookOpen, Briefcase, Heart, GraduationCap, Dumbbell } from 'lucide-react';
+import { Check, Plus, Trash2, Pencil, Target, Plane, Car, Home, Laptop, BookOpen, Briefcase, Heart, GraduationCap, Dumbbell } from 'lucide-react';
 
 interface Goal {
     id: number;
@@ -16,6 +16,7 @@ interface Goal {
 interface GoalCardProps {
     goal: Goal;
     onContribute: (goalId: number, amount: number) => void;
+    onEdit?: (goal: Goal) => void;
     onDelete: (goalId: number) => void;
 }
 
@@ -43,7 +44,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
     '🏋️': Dumbbell,
 };
 
-export default function GoalCard({ goal, onContribute, onDelete }: GoalCardProps) {
+export default function GoalCard({ goal, onContribute, onEdit, onDelete }: GoalCardProps) {
     const progress = (goal.current_amount / goal.target_amount) * 100;
     const remaining = goal.target_amount - goal.current_amount;
     const isComplete = goal.is_completed || progress >= 100;
@@ -99,21 +100,20 @@ export default function GoalCard({ goal, onContribute, onDelete }: GoalCardProps
 
             {/* Actions */}
             <div className="flex gap-2">
-                {!isComplete && (
-                    <>
-                        <button
-                            onClick={() => onContribute(goal.id, 50)}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded hover:bg-emerald-500/30 transition-colors"
-                        >
-                            <Plus className="w-3 h-3" /> GH₵50
-                        </button>
-                        <button
-                            onClick={() => onContribute(goal.id, 100)}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded hover:bg-emerald-500/30 transition-colors"
-                        >
-                            <Plus className="w-3 h-3" /> GH₵100
-                        </button>
-                    </>
+                <button
+                    onClick={() => onContribute(goal.id, 0)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded hover:bg-emerald-500/30 transition-colors"
+                >
+                    <Plus className="w-3 h-3" /> {isComplete ? 'Add More' : 'Add Savings'}
+                </button>
+                {onEdit && (
+                    <button
+                        onClick={() => onEdit(goal)}
+                        className="p-1.5 text-[#52525b] hover:text-blue-400 transition-colors"
+                        title="Edit goal"
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </button>
                 )}
                 <button
                     onClick={() => onDelete(goal.id)}

@@ -3,9 +3,9 @@ Authentication service using JWT tokens.
 PostgreSQL-only implementation.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any
-import hashlib
+import bcrypt
 import secrets
 import jwt
 import os
@@ -18,25 +18,33 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using SHA-256 with salt."""
-    salt = secrets.token_hex(16)
-    hashed = hashlib.sha256((password + salt).encode()).hexdigest()
-    return f"{salt}:{hashed}"
+    """Hash a password using bcrypt."""
+    password_bytes = password.encode("utf-8")
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    return hashed.decode("utf-8")
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Verify a password against its hash."""
+    """Verify a password against its hash. Supports both bcrypt and legacy SHA-256."""
     try:
+        # Try bcrypt first (new format)
+        if password_hash.startswith("$2b$") or password_hash.startswith("$2a$"):
+            return bcrypt.checkpw(
+                password.encode("utf-8"),
+                password_hash.encode("utf-8")
+            )
+        # Legacy SHA-256 fallback for existing users
+        import hashlib
         salt, hashed = password_hash.split(":")
         return hashlib.sha256((password + salt).encode()).hexdigest() == hashed
-    except ValueError:
+    except (ValueError, Exception):
         return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

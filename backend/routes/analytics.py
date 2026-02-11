@@ -464,7 +464,7 @@ async def get_safe_to_spend(
         status = "danger"
     elif over_daily_limit:
         status = "caution"
-    elif len(categories_near_limit) > 0 or (spent_this_month / total_income * 100) > 80 if total_income > 0 else False:
+    elif len(categories_near_limit) > 0 or (total_income > 0 and (spent_this_month / total_income * 100) > 80):
         status = "caution"
     else:
         status = "healthy"

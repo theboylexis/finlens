@@ -35,13 +35,13 @@ export default function LandingPage() {
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
-                                href="/app"
+                                href="/login"
                                 className="px-8 py-4 bg-white text-indigo-900 font-bold rounded-xl text-lg hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
                             >
                                 Get Started Free →
                             </Link>
                             <Link
-                                href="/app?demo=true"
+                                href="/login?demo=true"
                                 className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-medium rounded-xl text-lg border border-white/20 hover:bg-white/20 transition-all"
                             >
                                 View Demo
@@ -140,7 +140,7 @@ export default function LandingPage() {
                         Built With Modern Technology
                     </p>
                     <div className="flex flex-wrap justify-center gap-6 text-gray-700 dark:text-gray-300">
-                        <span className="px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">⚡ Next.js 14</span>
+                        <span className="px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">⚡ Next.js</span>
                         <span className="px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">🐍 FastAPI</span>
                         <span className="px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">🤖 Gemini AI</span>
                         <span className="px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">🎨 TailwindCSS</span>
@@ -159,7 +159,7 @@ export default function LandingPage() {
                         Join thousands of students taking control of their money.
                     </p>
                     <Link
-                        href="/app"
+                        href="/login"
                         className="inline-flex px-8 py-4 bg-white text-indigo-600 font-bold rounded-xl text-lg hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
                     >
                         Start Tracking Now →

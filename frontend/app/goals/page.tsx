@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
 import GoalCard from '@/components/GoalCard';
 import AddGoalModal from '@/components/AddGoalModal';
+import EditGoalModal from '@/components/EditGoalModal';
 import ContributeModal from '@/components/ContributeModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import EmptyState from '@/components/EmptyState';
@@ -35,6 +36,7 @@ export default function GoalsPage() {
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
   const [celebratingGoal, setCelebratingGoal] = useState<Goal | null>(null);
+  const [editGoal, setEditGoal] = useState<Goal | null>(null);
   const [deleteGoalId, setDeleteGoalId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -59,6 +61,11 @@ export default function GoalsPage() {
 
   const handleGoalAdded = () => {
     setShowAddModal(false);
+    fetchGoals();
+  };
+
+  const handleGoalEdited = () => {
+    setEditGoal(null);
     fetchGoals();
   };
 
@@ -161,6 +168,7 @@ export default function GoalsPage() {
                     key={goal.id}
                     goal={goal}
                     onContribute={() => setContributeGoal(goal)}
+                    onEdit={(g) => setEditGoal(g)}
                     onDelete={() => setDeleteGoalId(goal.id)}
                   />
                 ))}
@@ -183,7 +191,8 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
-                      onContribute={() => { }}
+                      onContribute={() => setContributeGoal(goal)}
+                      onEdit={(g) => setEditGoal(g)}
                       onDelete={() => setDeleteGoalId(goal.id)}
                     />
                   ))}
@@ -196,6 +205,9 @@ export default function GoalsPage() {
 
       {showAddModal && (
         <AddGoalModal onClose={() => setShowAddModal(false)} onSuccess={handleGoalAdded} />
+      )}
+      {editGoal && (
+        <EditGoalModal goal={editGoal} onClose={() => setEditGoal(null)} onSuccess={handleGoalEdited} />
       )}
       {contributeGoal && (
         <ContributeModal goal={contributeGoal} onClose={() => setContributeGoal(null)} onContribute={handleContribute} />

@@ -140,191 +140,33 @@ async def health_check():
     return {"status": "healthy"}
 
 
-@app.get("/debug/env")
-async def debug_env():
-    """Debug endpoint to check environment variables (key presence only)."""
-    return {
-        "GEMINI_API_KEY_SET": bool(os.getenv("GEMINI_API_KEY")),
-        "GEMINI_API_KEY_LENGTH": len(os.getenv("GEMINI_API_KEY", "")),
-        "JWT_SECRET_SET": bool(os.getenv("JWT_SECRET")),
-    }
+# Debug endpoints - only available when DEBUG_MODE is set
+if os.getenv("DEBUG_MODE"):
+    @app.get("/debug/env")
+    async def debug_env():
+        """Debug endpoint to check environment variables (key presence only)."""
+        return {
+            "GEMINI_API_KEY_SET": bool(os.getenv("GEMINI_API_KEY")),
+            "GEMINI_API_KEY_LENGTH": len(os.getenv("GEMINI_API_KEY", "")),
+            "JWT_SECRET_SET": bool(os.getenv("JWT_SECRET")),
+        }
 
-
-@app.get("/debug/tables")
-async def debug_tables():
-    """Debug endpoint to check database tables."""
-    try:
-        async with db.get_connection() as conn:
-            if db.is_postgres:
-                cursor = await conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                tables = await cursor.fetchall()
-                return {"tables": [dict(t).get("table_name", list(dict(t).values())[0]) for t in tables], "db_type": "postgres"}
-            else:
-                cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                tables = await cursor.fetchall()
-                return {"tables": [t["name"] for t in tables], "db_type": "sqlite"}
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
-
-
-@app.get("/debug/test-income")
-async def debug_test_income():
-    """Debug endpoint to test income creation flow."""
-    from datetime import date
-    try:
-        async with db.get_connection() as conn:
-            # Try inserting a test row
-            test_user_id = 1  # Assuming user ID 1 exists
-            cursor = await conn.execute(
-                """
-                INSERT INTO incomes (user_id, amount, source, category, date, is_recurring)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (test_user_id, 99.99, "Debug Test", "Job", date.today(), False)
-            )
-            await conn.commit()
-            
-            new_id = cursor.lastrowid
-            
-            # Try fetching the row
-            if new_id:
-                fetch_cursor = await conn.execute("SELECT * FROM incomes WHERE id = ?", (new_id,))
-            else:
-                fetch_cursor = await conn.execute(
-                    "SELECT * FROM incomes WHERE user_id = ? ORDER BY id DESC LIMIT 1", 
-                    (test_user_id,)
-                )
-            row = await fetch_cursor.fetchone()
-            
-            if row:
-                # Delete the test row
-                await conn.execute("DELETE FROM incomes WHERE source = 'Debug Test'")
-                await conn.commit()
-                return {
-                    "success": True, 
-                    "new_id": new_id,
-                    "row": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
-                }
-            else:
-                return {"success": False, "error": "Row not found after insert"}
-    except Exception as e:
-        import traceback
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-
-
-@app.get("/debug/test-budget")
-async def debug_test_budget():
-    """Debug endpoint to test budget creation flow."""
-    try:
-        async with db.get_connection() as conn:
-            # Try inserting a test budget
-            test_user_id = 1  # May not exist, but will show if there are other errors
-            cursor = await conn.execute(
-                """
-                INSERT INTO budgets (user_id, category, monthly_limit)
-                VALUES (?, ?, ?)
-                """,
-                (test_user_id, "Debug Test Category", 100.00)
-            )
-            await conn.commit()
-            
-            new_id = cursor.lastrowid
-            
-            # Try fetching the row
-            if new_id:
-                fetch_cursor = await conn.execute("SELECT * FROM budgets WHERE id = ?", (new_id,))
-            else:
-                fetch_cursor = await conn.execute(
-                    "SELECT * FROM budgets WHERE category = 'Debug Test Category' AND user_id = ?", 
-                    (test_user_id,)
-                )
-            row = await fetch_cursor.fetchone()
-            
-            if row:
-                # Delete the test row
-                await conn.execute("DELETE FROM budgets WHERE category = 'Debug Test Category'")
-                await conn.commit()
-                return {
-                    "success": True, 
-                    "new_id": new_id,
-                    "row": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
-                }
-            else:
-                return {"success": False, "error": "Row not found after insert"}
-    except Exception as e:
-        import traceback
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-
-
-@app.get("/debug/list-budgets")
-async def debug_list_budgets():
-    """List all budgets in database."""
-    try:
-        async with db.get_connection() as conn:
-            cursor = await conn.execute("SELECT * FROM budgets ORDER BY id")
-            rows = await cursor.fetchall()
-            return {
-                "success": True, 
-                "count": len(rows),
-                "budgets": [dict(r) if hasattr(r, 'keys') else {"raw": str(r)} for r in rows]
-            }
-    except Exception as e:
-        import traceback
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-
-
-@app.get("/debug/test-food-budget")
-async def debug_test_food_budget():
-    """Debug endpoint to test creating a Food & Dining budget for user 21."""
-    try:
-        async with db.get_connection() as conn:
-            test_user_id = 21  # testuser@example.com
-            category = "Food & Dining"
-            limit = 500.0
-            
-            # Check if exists
-            check_cursor = await conn.execute(
-                "SELECT id FROM budgets WHERE category = ? AND user_id = ?",
-                (category, test_user_id)
-            )
-            existing = await check_cursor.fetchone()
-            
-            if existing:
-                return {
-                    "success": False, 
-                    "reason": "already_exists",
-                    "existing_id": existing["id"] if hasattr(existing, 'keys') else str(existing)
-                }
-            
-            # Try insert
-            cursor = await conn.execute(
-                """
-                INSERT INTO budgets (user_id, category, monthly_limit)
-                VALUES (?, ?, ?)
-                """,
-                (test_user_id, category, limit)
-            )
-            await conn.commit()
-            
-            # Try to fetch it
-            fetch_cursor = await conn.execute(
-                "SELECT * FROM budgets WHERE category = ? AND user_id = ?",
-                (category, test_user_id)
-            )
-            row = await fetch_cursor.fetchone()
-            
-            if row:
-                return {
-                    "success": True,
-                    "budget": dict(row) if hasattr(row, 'keys') else {"raw": str(row)}
-                }
-            else:
-                return {"success": False, "reason": "not_found_after_insert"}
-                
-    except Exception as e:
-        import traceback
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+    @app.get("/debug/tables")
+    async def debug_tables():
+        """Debug endpoint to check database tables."""
+        try:
+            async with db.get_connection() as conn:
+                if db.is_postgres:
+                    cursor = await conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                    tables = await cursor.fetchall()
+                    return {"tables": [dict(t).get("table_name", list(dict(t).values())[0]) for t in tables], "db_type": "postgres"}
+                else:
+                    cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                    tables = await cursor.fetchall()
+                    return {"tables": [t["name"] for t in tables], "db_type": "sqlite"}
+        except Exception as e:
+            import traceback
+            return {"error": str(e), "traceback": traceback.format_exc()}
 
 
 # Include routers
