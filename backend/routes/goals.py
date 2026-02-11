@@ -24,8 +24,8 @@ def calculate_days_remaining(target_date: date | None) -> int | None:
 
 def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
     """Convert database row to GoalResponse model."""
-    current_amount = row["current_amount"] or 0
-    target_amount = row["target_amount"]
+    current_amount = float(row["current_amount"] or 0)
+    target_amount = float(row["target_amount"])
     progress = (current_amount / target_amount * 100) if target_amount > 0 else 0
     
     # Handle target_date (can be string, date object, or None)
@@ -218,8 +218,8 @@ async def add_contribution(
     )
     
     # Update goal's current_amount
-    new_amount = (goal["current_amount"] or 0) + contribution.amount
-    is_completed = new_amount >= goal["target_amount"]
+    new_amount = float(goal["current_amount"] or 0) + float(contribution.amount)
+    is_completed = new_amount >= float(goal["target_amount"])
     
     if is_completed:
         await db.execute(

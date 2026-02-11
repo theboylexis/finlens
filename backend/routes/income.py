@@ -44,7 +44,7 @@ async def list_income(
         IncomeResponse(
             id=row["id"],
             user_id=row["user_id"],
-            amount=row["amount"],
+            amount=float(row["amount"]),
             source=row["source"],
             category=row["category"],
             date=row["date"],
@@ -161,7 +161,7 @@ async def get_income_summary(
         (user["id"], start_date, end_date)
     )
     row = await cursor.fetchone()
-    total = row["total"] if row else 0
+    total = float(row["total"]) if row else 0
     
     return {
         "total_income": total,

@@ -147,11 +147,11 @@ async def create_expense(
             (category, month_start, month_end, user_id)
         )
         spent_row = await spent_cursor.fetchone()
-        total_spent = spent_row["total"] if spent_row else 0
+        total_spent = float(spent_row["total"]) if spent_row else 0
         
         # Check and create alerts if thresholds crossed
         await check_and_create_budget_alerts(
-            db, user_id, category, total_spent, budget_row["monthly_limit"]
+            db, user_id, category, total_spent, float(budget_row["monthly_limit"])
         )
     
     return dict(row)

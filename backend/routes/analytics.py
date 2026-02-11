@@ -56,7 +56,7 @@ async def get_analytics_summary(
         (start_date, end_date, *user_params)
     )
     row = await cursor.fetchone()
-    total_expenses = row["total"]
+    total_expenses = float(row["total"] or 0)
     expense_count = row["count"]
     average_expense = total_expenses / expense_count if expense_count > 0 else 0
     
@@ -75,7 +75,7 @@ async def get_analytics_summary(
     
     if top_row:
         top_category = top_row["category"]
-        top_category_amount = top_row["total"]
+        top_category_amount = float(top_row["total"] or 0)
     else:
         top_category = "None"
         top_category_amount = 0
@@ -115,7 +115,7 @@ async def get_spending_by_category(
         (start_date, end_date, *user_params)
     )
     total_row = await cursor.fetchone()
-    grand_total = total_row["total"]
+    grand_total = float(total_row["total"] or 0)
     
     cursor = await db.execute(
         f"""
@@ -134,10 +134,11 @@ async def get_spending_by_category(
     
     results = []
     for row in rows:
-        percentage = (row["total"] / grand_total * 100) if grand_total > 0 else 0
+        row_total = float(row["total"] or 0)
+        percentage = (row_total / grand_total * 100) if grand_total > 0 else 0
         results.append(SpendingByCategory(
             category=row["category"],
-            total=row["total"],
+            total=row_total,
             count=row["count"],
             percentage=percentage
         ))
@@ -175,7 +176,7 @@ async def get_spending_trends(
     rows = await cursor.fetchall()
     
     return [
-        SpendingTrend(date=row["date"], total=row["total"])
+        SpendingTrend(date=row["date"], total=float(row["total"] or 0))
         for row in rows
     ]
 
@@ -217,7 +218,7 @@ async def get_spending_heatmap(
     
     heatmap_data = {}
     for row in rows:
-        heatmap_data[str(row["date"])] = row["total"]
+        heatmap_data[str(row["date"])] = float(row["total"] or 0)
     
     return {
         "year": year,
@@ -271,8 +272,8 @@ async def get_budget_status(
     
     results = []
     for row in rows:
-        monthly_limit = row["monthly_limit"]
-        current_spending = row["current_spending"]
+        monthly_limit = float(row["monthly_limit"] or 0)
+        current_spending = float(row["current_spending"] or 0)
         remaining = monthly_limit - current_spending
         percentage_used = (current_spending / monthly_limit * 100) if monthly_limit > 0 else 0
         is_over_budget = current_spending > monthly_limit

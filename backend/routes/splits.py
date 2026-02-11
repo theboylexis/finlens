@@ -123,7 +123,7 @@ async def split_expense(
             expense_id=row["expense_id"],
             friend_id=row["friend_id"],
             friend_name=row["friend_name"],
-            amount=row["amount"],
+            amount=float(row["amount"]),
             is_settled=bool(row["is_settled"]),
             settled_at=row["settled_at"],
             created_at=row["created_at"]
@@ -169,7 +169,7 @@ async def get_balances(
             friend_name=row["friend_name"],
             friend_email=row["friend_email"],
             avatar_color=row["avatar_color"],
-            total_owed=row["total_owed"],
+            total_owed=float(row["total_owed"] or 0),
             unsettled_count=row["unsettled_count"]
         )
         for row in rows
@@ -272,8 +272,7 @@ async def get_expense_splits(
             expense_id=row["expense_id"],
             friend_id=row["friend_id"],
             friend_name=row["friend_name"],
-            amount=row["amount"],
-            is_settled=bool(row["is_settled"]),
+            amount=float(row["amount"]),
             settled_at=row["settled_at"],
             created_at=row["created_at"]
         )

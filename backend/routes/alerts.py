@@ -130,8 +130,8 @@ async def get_budget_status_with_alerts(
     results = []
     for row in rows:
         category = row["category"]
-        monthly_limit = row["monthly_limit"]
-        spent = row["spent"]
+        monthly_limit = float(row["monthly_limit"] or 0)
+        spent = float(row["spent"] or 0)
         remaining = max(0, monthly_limit - spent)
         percentage = (spent / monthly_limit * 100) if monthly_limit > 0 else 0
         daily_allowance = remaining / days_remaining if days_remaining > 0 else 0
