@@ -16,7 +16,7 @@ interface Goal {
 interface ContributeModalProps {
     goal: Goal;
     onClose: () => void;
-    onContribute: (goalId: number, amount: number, note: string) => void;
+    onContribute: (goalId: number, amount: number, note: string) => Promise<boolean>;
 }
 
 const QUICK_AMOUNTS = [10, 20, 50, 100, 200];
@@ -25,14 +25,19 @@ export default function ContributeModal({ goal, onClose, onContribute }: Contrib
     const [amount, setAmount] = useState('');
     const [note, setNote] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const remaining = goal.target_amount - goal.current_amount;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         setLoading(true);
-        await onContribute(goal.id, parseFloat(amount), note);
+        const success = await onContribute(goal.id, parseFloat(amount), note);
         setLoading(false);
+        if (!success) {
+            setError('Failed to add contribution. Please try again.');
+        }
     };
 
     const handleQuickAmount = (quickAmount: number) => {
@@ -131,6 +136,11 @@ export default function ContributeModal({ goal, onClose, onContribute }: Contrib
                     </div>
 
                     {/* Preview */}
+                    {error && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+                            <p className="text-xs text-red-400">{error}</p>
+                        </div>
+                    )}
                     {amount && parseFloat(amount) > 0 && (
                         <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
                             <p className="text-xs text-emerald-400">After this contribution:</p>

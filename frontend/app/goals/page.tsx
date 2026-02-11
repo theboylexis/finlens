@@ -69,7 +69,7 @@ export default function GoalsPage() {
     fetchGoals();
   };
 
-  const handleContribute = async (goalId: number, amount: number, note: string) => {
+  const handleContribute = async (goalId: number, amount: number, note: string): Promise<boolean> => {
     try {
       const response = await fetch(`${API_URL}/api/goals/${goalId}/contribute`, {
         method: 'POST',
@@ -77,7 +77,10 @@ export default function GoalsPage() {
         body: JSON.stringify({ amount, note: note || null }),
       });
 
-      if (!response.ok) throw new Error('Failed to add contribution');
+      if (!response.ok) {
+        console.error('Contribute failed:', response.status, await response.text());
+        return false;
+      }
 
       const updatedGoal = await response.json();
 
@@ -88,8 +91,10 @@ export default function GoalsPage() {
 
       setContributeGoal(null);
       fetchGoals();
+      return true;
     } catch (err) {
       console.error('Error adding contribution:', err);
+      return false;
     }
   };
 
