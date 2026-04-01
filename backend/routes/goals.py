@@ -3,9 +3,8 @@ Goals API routes for savings goals management.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import date, datetime
-import aiosqlite
 
 from database import get_db
 from models import GoalCreate, GoalUpdate, GoalResponse, ContributionCreate, ContributionResponse
@@ -22,7 +21,7 @@ def calculate_days_remaining(target_date: date | None) -> int | None:
     return max(0, delta.days)
 
 
-def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
+def row_to_goal_response(row: Any) -> GoalResponse:
     """Convert database row to GoalResponse model."""
     current_amount = float(row["current_amount"] or 0)
     target_amount = float(row["target_amount"])
@@ -61,7 +60,7 @@ def row_to_goal_response(row: aiosqlite.Row) -> GoalResponse:
 @router.get("/", response_model=List[GoalResponse])
 async def list_goals(
     include_completed: bool = False,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """List all savings goals for current user."""
@@ -81,7 +80,7 @@ async def list_goals(
 @router.post("/", response_model=GoalResponse, status_code=201)
 async def create_goal(
     goal: GoalCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Create a new savings goal."""
@@ -105,7 +104,7 @@ async def create_goal(
 @router.get("/{goal_id}", response_model=GoalResponse)
 async def get_goal(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get a specific savings goal."""
@@ -122,7 +121,7 @@ async def get_goal(
 async def update_goal(
     goal_id: int,
     goal_update: GoalUpdate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Update a savings goal."""
@@ -177,7 +176,7 @@ async def update_goal(
 @router.delete("/{goal_id}", status_code=204)
 async def delete_goal(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Delete a savings goal."""
@@ -197,7 +196,7 @@ async def delete_goal(
 async def add_contribution(
     goal_id: int,
     contribution: ContributionCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Add a contribution to a savings goal."""
@@ -252,7 +251,7 @@ async def add_contribution(
 @router.get("/{goal_id}/contributions", response_model=List[ContributionResponse])
 async def get_contributions(
     goal_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get contribution history for a goal."""

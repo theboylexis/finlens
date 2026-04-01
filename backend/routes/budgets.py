@@ -4,8 +4,7 @@ Handles budget creation and management.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
-import aiosqlite
+from typing import Any, List
 
 from database import get_db
 from models import BudgetCreate, BudgetResponse
@@ -18,7 +17,7 @@ router = APIRouter()
 @router.post("/", response_model=BudgetResponse, status_code=status.HTTP_201_CREATED)
 async def create_budget(
     budget: BudgetCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Create or update a budget for a category for the current user."""
@@ -136,7 +135,7 @@ async def create_budget(
 
 @router.get("/", response_model=List[BudgetResponse])
 async def get_budgets(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get all budgets for current user."""
@@ -152,7 +151,7 @@ async def get_budgets(
 @router.delete("/{category}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_budget(
     category: str,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Delete a budget for a category."""

@@ -581,9 +581,11 @@ class IncomeResponse(BaseModel):
     date: DateType
     is_recurring: bool
     created_at: DateTimeType
-    
+
     class Config:
         from_attributes = True
 
 
+IncomeCreate.model_rebuild()
+IncomeResponse.model_rebuild()
 

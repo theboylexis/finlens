@@ -3,9 +3,8 @@ Income API routes for tracking earnings.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import date, datetime, timedelta
-import aiosqlite
 
 from database import get_db
 from models import IncomeCreate, IncomeResponse
@@ -19,7 +18,7 @@ async def list_income(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     limit: int = 50,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """List all income entries."""
@@ -58,7 +57,7 @@ async def list_income(
 @router.post("/", response_model=IncomeResponse, status_code=201)
 async def create_income(
     income: IncomeCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Add a new income entry."""
@@ -117,7 +116,7 @@ async def create_income(
 @router.delete("/{income_id}", status_code=204)
 async def delete_income(
     income_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Delete an income entry."""
@@ -137,7 +136,7 @@ async def delete_income(
 async def get_income_summary(
     month: Optional[int] = None,
     year: Optional[int] = None,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get total income summary."""

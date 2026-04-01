@@ -4,9 +4,8 @@ Track recurring subscriptions and get renewal reminders.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import date, datetime, timedelta
-import aiosqlite
 
 from database import get_db
 from models import (
@@ -46,13 +45,13 @@ def build_user_filter(user: Optional[dict]) -> tuple[str, list]:
 @router.get("/", response_model=List[SubscriptionResponse])
 async def get_subscriptions(
     active_only: bool = True,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get all subscriptions."""
     user_filter, user_params = build_user_filter(user)
     
-    active_filter = "AND is_active = 1" if active_only else ""
+    active_filter = "AND is_active = TRUE" if active_only else ""
     
     cursor = await db.execute(
         f"""
@@ -82,7 +81,7 @@ async def get_subscriptions(
 @router.get("/upcoming", response_model=List[SubscriptionResponse])
 async def get_upcoming_renewals(
     days: int = 7,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get subscriptions renewing within specified days."""
@@ -95,7 +94,7 @@ async def get_upcoming_renewals(
         f"""
         SELECT * FROM subscriptions
         WHERE {user_filter}
-        AND is_active = 1
+        AND is_active = TRUE
         AND next_renewal >= ?
         AND next_renewal <= ?
         ORDER BY next_renewal ASC
@@ -120,7 +119,7 @@ async def get_upcoming_renewals(
 
 @router.get("/summary")
 async def get_subscriptions_summary(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get subscription spending summary."""
@@ -129,7 +128,7 @@ async def get_subscriptions_summary(
     cursor = await db.execute(
         f"""
         SELECT * FROM subscriptions
-        WHERE {user_filter} AND is_active = 1
+        WHERE {user_filter} AND is_active = TRUE
         """,
         tuple(user_params)
     )
@@ -153,7 +152,7 @@ async def get_subscriptions_summary(
 @router.post("/", response_model=SubscriptionResponse)
 async def create_subscription(
     subscription: SubscriptionCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Create a new subscription."""
@@ -200,7 +199,7 @@ async def create_subscription(
 async def update_subscription(
     subscription_id: int,
     subscription: SubscriptionUpdate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Update an existing subscription."""
@@ -269,7 +268,7 @@ async def update_subscription(
 @router.delete("/{subscription_id}")
 async def delete_subscription(
     subscription_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Delete a subscription."""

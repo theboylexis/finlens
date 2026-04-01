@@ -1,6 +1,5 @@
 // API Configuration
 const ENV_API_URL = process.env.NEXT_PUBLIC_API_URL;
-console.log('DEBUG: NEXT_PUBLIC_API_URL=', ENV_API_URL);
 
 let apiUrl = ENV_API_URL || 'http://localhost:8000';
 // Ensure protocol is present
@@ -11,8 +10,6 @@ if (!apiUrl.startsWith('http')) {
 apiUrl = apiUrl.replace(/\/$/, '');
 
 export const API_URL = apiUrl;
-
-console.log('DEBUG: Final computed API_URL=', API_URL);
 
 // Type Definitions
 export interface Category {

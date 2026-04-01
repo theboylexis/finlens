@@ -84,7 +84,6 @@ class GamificationStats(BaseModel):
     badges: List[Badge]
     total_expenses_logged: int
     goals_completed: int
-    months_under_budget: int
 
 
 @router.get("/stats", response_model=GamificationStats)
@@ -175,7 +174,7 @@ async def get_gamification_stats(
     
     # Get completed goals count
     goals_cursor = await conn.execute(
-        "SELECT COUNT(*) as count FROM savings_goals WHERE user_id = ? AND is_completed = 1",
+        "SELECT COUNT(*) as count FROM savings_goals WHERE user_id = ? AND is_completed = TRUE",
         (user_id,)
     )
     goals_row = await goals_cursor.fetchone()
@@ -225,8 +224,7 @@ async def get_gamification_stats(
         streak=streak_info,
         badges=badges_earned,
         total_expenses_logged=total_expenses,
-        goals_completed=goals_completed,
-        months_under_budget=0  # TODO: Calculate properly
+        goals_completed=goals_completed
     )
 
 

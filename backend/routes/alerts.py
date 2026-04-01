@@ -3,21 +3,19 @@ Alerts API routes for spending notifications.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from typing import Any, List
 from datetime import datetime, date
 from calendar import monthrange
-import aiosqlite
 
 from database import get_db
 from models import AlertResponse, AlertsSummary, BudgetStatusWithAlert
 from services.alerts import get_unread_alerts, get_unread_count, mark_alert_read, dismiss_alert, mark_all_read
 from dependencies import get_current_user, require_auth
-from typing import List, Optional
 
 router = APIRouter()
 
 
-def row_to_alert(row: aiosqlite.Row) -> AlertResponse:
+def row_to_alert(row: Any) -> AlertResponse:
     """Convert database row to AlertResponse."""
     return AlertResponse(
         id=row["id"],
@@ -39,7 +37,7 @@ def row_to_alert(row: aiosqlite.Row) -> AlertResponse:
 @router.get("/", response_model=AlertsSummary)
 async def list_alerts(
     limit: int = 10,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get alerts summary with unread count for current user."""
@@ -48,18 +46,14 @@ async def list_alerts(
     
     return AlertsSummary(
         unread_count=unread_count,
-        alerts=[row_to_alert(a) if isinstance(a, aiosqlite.Row) else AlertResponse(**{
-            **a,
-            "is_read": bool(a.get("is_read", 0)),
-            "is_dismissed": bool(a.get("is_dismissed", 0))
-        }) for a in alerts]
+        alerts=[row_to_alert(a) for a in alerts]
     )
 
 
 @router.patch("/{alert_id}/read")
 async def mark_read(
     alert_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Mark an alert as read for current user."""
@@ -72,7 +66,7 @@ async def mark_read(
 @router.delete("/{alert_id}")
 async def dismiss(
     alert_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Dismiss an alert for current user."""
@@ -84,7 +78,7 @@ async def dismiss(
 
 @router.post("/mark-all-read")
 async def mark_all_alerts_read(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Mark all alerts as read for current user."""
@@ -98,7 +92,7 @@ async def mark_all_alerts_read(
 
 @router.get("/budget-status", response_model=List[BudgetStatusWithAlert])
 async def get_budget_status_with_alerts(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get all budget statuses with alert levels for current user."""

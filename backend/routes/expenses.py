@@ -4,9 +4,8 @@ Handles CRUD operations for expenses with AI categorization.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime, date, timedelta
-import aiosqlite
 import time
 
 from database import get_db
@@ -28,7 +27,7 @@ router = APIRouter()
 @router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 async def create_expense(
     expense: ExpenseCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """
@@ -231,7 +230,7 @@ async def get_expenses(
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """
@@ -276,7 +275,7 @@ async def get_expenses(
 
 @router.get("/weekly-summary")
 async def get_weekly_summary(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """
@@ -349,7 +348,7 @@ async def suggest_category(
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 async def get_expense(
     expense_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get a specific expense by ID."""
@@ -376,7 +375,7 @@ async def get_expense(
 async def update_expense(
     expense_id: int,
     expense_update: ExpenseUpdate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """
@@ -457,7 +456,7 @@ async def update_expense(
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_expense(
     expense_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Delete an expense."""
@@ -513,7 +512,7 @@ DEMO_EXPENSES = [
 
 @router.post("/demo/seed")
 async def seed_demo_data(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Populate database with realistic demo data for showcasing."""

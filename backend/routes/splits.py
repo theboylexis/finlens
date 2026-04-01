@@ -3,9 +3,8 @@ Splits API routes for friends management and bill splitting.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from typing import Any, List
 from datetime import datetime
-import aiosqlite
 
 from database import get_db
 from models import (
@@ -24,7 +23,7 @@ router = APIRouter()
 
 @router.get("/friends", response_model=List[FriendResponse])
 async def list_friends(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """List all friends."""
@@ -36,7 +35,7 @@ async def list_friends(
 @router.post("/friends", response_model=FriendResponse, status_code=201)
 async def create_friend(
     friend: FriendCreate,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Add a new friend."""
@@ -58,7 +57,7 @@ async def create_friend(
 @router.delete("/friends/{friend_id}", status_code=204)
 async def delete_friend(
     friend_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Remove a friend."""
@@ -78,7 +77,7 @@ async def delete_friend(
 async def split_expense(
     expense_id: int,
     request: SplitExpenseRequest,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Split an expense with friends."""
@@ -138,7 +137,7 @@ async def split_expense(
 
 @router.get("/balances", response_model=BalancesResponse)
 async def get_balances(
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get summary of who owes what."""
@@ -186,7 +185,7 @@ async def get_balances(
 @router.patch("/splits/{split_id}/settle")
 async def settle_split(
     split_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Mark a split as settled (paid)."""
@@ -218,7 +217,7 @@ async def settle_split(
 @router.patch("/friends/{friend_id}/settle-all")
 async def settle_all_with_friend(
     friend_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Settle all splits with a friend."""
@@ -246,7 +245,7 @@ async def settle_all_with_friend(
 @router.get("/expenses/{expense_id}/splits", response_model=List[SplitResponse])
 async def get_expense_splits(
     expense_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
+    db: Any = Depends(get_db),
     user: dict = Depends(require_auth)
 ):
     """Get all splits for an expense."""

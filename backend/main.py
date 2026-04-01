@@ -54,12 +54,9 @@ app = FastAPI(
 raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000")
 origins = [origin.strip() for origin in raw_origins.split(",")]
 
-# Explicitly add production domains (fallback)
-origins.extend([
-    "https://finlens-chi.vercel.app",
-    "https://finlens-beta.vercel.app",
-    "http://localhost:3000"
-])
+# Ensure localhost is always available for local development
+if "http://localhost:3000" not in origins:
+    origins.append("http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
@@ -191,8 +188,10 @@ async def health_check():
 
 # Debug endpoints - only available when DEBUG_MODE is set
 if os.getenv("DEBUG_MODE"):
+    from dependencies import require_auth as _require_auth
+
     @app.get("/debug/env")
-    async def debug_env():
+    async def debug_env(user: dict = Depends(_require_auth)):
         """Debug endpoint to check environment variables (key presence only)."""
         return {
             "GEMINI_API_KEY_SET": bool(os.getenv("GEMINI_API_KEY")),
@@ -201,18 +200,13 @@ if os.getenv("DEBUG_MODE"):
         }
 
     @app.get("/debug/tables")
-    async def debug_tables():
+    async def debug_tables(user: dict = Depends(_require_auth)):
         """Debug endpoint to check database tables."""
         try:
             async with db.get_connection() as conn:
-                if db.is_postgres:
-                    cursor = await conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                    tables = await cursor.fetchall()
-                    return {"tables": [dict(t).get("table_name", list(dict(t).values())[0]) for t in tables], "db_type": "postgres"}
-                else:
-                    cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                    tables = await cursor.fetchall()
-                    return {"tables": [t["name"] for t in tables], "db_type": "sqlite"}
+                cursor = await conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                tables = await cursor.fetchall()
+                return {"tables": [dict(t).get("table_name", list(dict(t).values())[0]) for t in tables], "db_type": "postgres"}
         except Exception as e:
             import traceback
             return {"error": str(e), "traceback": traceback.format_exc()}

@@ -5,7 +5,7 @@ Authentication routes for user signup, login, and token management.
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
-import aiosqlite
+from typing import Any
 
 from database import get_db
 from dependencies import require_auth
@@ -78,7 +78,7 @@ class UserResponse(BaseModel):
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
     data: UserSignup,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     """Create a new user account."""
     # Check if email already exists
@@ -117,7 +117,7 @@ async def signup(
 @router.post("/login", response_model=TokenResponse)
 async def login(
     data: UserLogin,
-    db: aiosqlite.Connection = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     """Login with email and password."""
     user = await authenticate_user(db, data.email.lower().strip(), data.password)
@@ -162,7 +162,7 @@ async def verify_token(user: dict = Depends(require_auth)):
 @router.delete("/account", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(
     user: dict = Depends(require_auth),
-    db: aiosqlite.Connection = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     """
     Delete the current user's account and all associated data.

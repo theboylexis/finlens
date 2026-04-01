@@ -45,7 +45,6 @@ interface GamificationStats {
     badges: Badge[];
     total_expenses_logged: number;
     goals_completed: number;
-    months_under_budget: number;
 }
 
 const COLOR_MAP: Record<string, string> = {

@@ -3,11 +3,11 @@ Alert service for managing spending alerts.
 """
 
 from datetime import datetime
-import aiosqlite
+from typing import Any
 
 
 async def check_and_create_budget_alerts(
-    db: aiosqlite.Connection,
+    db: Any,
     user_id: int,
     category: str,
     spent: float,
@@ -76,7 +76,7 @@ async def check_and_create_budget_alerts(
     return new_alerts
 
 
-async def get_unread_alerts(db: aiosqlite.Connection, user_id: int, limit: int = 10) -> list[dict]:
+async def get_unread_alerts(db: Any, user_id: int, limit: int = 10) -> list[dict]:
     """Get unread and not dismissed alerts for a specific user."""
     cursor = await db.execute(
         """
@@ -91,7 +91,7 @@ async def get_unread_alerts(db: aiosqlite.Connection, user_id: int, limit: int =
     return [dict(row) for row in rows]
 
 
-async def get_unread_count(db: aiosqlite.Connection, user_id: int) -> int:
+async def get_unread_count(db: Any, user_id: int) -> int:
     """Get count of unread alerts for a specific user."""
     cursor = await db.execute(
         "SELECT COUNT(*) FROM alerts WHERE user_id = ? AND is_read = FALSE AND is_dismissed = FALSE",
@@ -101,7 +101,7 @@ async def get_unread_count(db: aiosqlite.Connection, user_id: int) -> int:
     return row[0] if row else 0
 
 
-async def mark_alert_read(db: aiosqlite.Connection, user_id: int, alert_id: int) -> bool:
+async def mark_alert_read(db: Any, user_id: int, alert_id: int) -> bool:
     """Mark an alert as read for a specific user."""
     cursor = await db.execute(
         "UPDATE alerts SET is_read = TRUE WHERE id = ? AND user_id = ?",
@@ -111,7 +111,7 @@ async def mark_alert_read(db: aiosqlite.Connection, user_id: int, alert_id: int)
     return cursor.rowcount > 0
 
 
-async def dismiss_alert(db: aiosqlite.Connection, user_id: int, alert_id: int) -> bool:
+async def dismiss_alert(db: Any, user_id: int, alert_id: int) -> bool:
     """Dismiss an alert for a specific user."""
     cursor = await db.execute(
         "UPDATE alerts SET is_dismissed = TRUE WHERE id = ? AND user_id = ?",
@@ -121,7 +121,7 @@ async def dismiss_alert(db: aiosqlite.Connection, user_id: int, alert_id: int) -
     return cursor.rowcount > 0
 
 
-async def mark_all_read(db: aiosqlite.Connection, user_id: int) -> int:
+async def mark_all_read(db: Any, user_id: int) -> int:
     """Mark all alerts as read for a specific user. Returns count of updated alerts."""
     cursor = await db.execute(
         "UPDATE alerts SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE",
