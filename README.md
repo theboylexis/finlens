@@ -4,7 +4,7 @@
 
 A full-stack personal finance application featuring intelligent expense categorization, natural language queries, budget tracking, financial goal management, income tracking, subscription management, and gamified savings — powered by Google Gemini AI.
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-finlens--chi.vercel.app-00C853?style=for-the-badge&logo=vercel&logoColor=white)](https://finlens-chi.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-finlens--beta.vercel.app-00C853?style=for-the-badge&logo=vercel&logoColor=white)](https://finlens-chi.vercel.app)
 
 ![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
